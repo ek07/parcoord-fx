@@ -2,7 +2,7 @@
  * To change this template, choose Tools | Templates
  * and open the template in the editor.
  */
-package tugraz.ivis.parcoord.util.data;
+package tugraz.ivis.parcoord.util.importer;
 
 import java.io.BufferedReader;
 import java.io.FileReader;
