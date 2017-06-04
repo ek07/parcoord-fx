@@ -50,6 +50,13 @@ public class Controller implements Initializable {
         }
     }
 
+    @FXML
+    public void onShowInfo(ActionEvent actionEvent) {
+        showInfoDialog("Project made over the course of the lecture " +
+                "'Information Visualisation'\nat Graz University of Technology by:" +
+                "\n  Thomas Absenger\n  Mohammad Chegini\n  Thorsten Ruprechter\n  Helmut Zöhrer");
+    }
+
     private void importDataFromFile(String absolutePath) {
         // just print for testing for now
         DataModel dm = null;
@@ -72,6 +79,14 @@ public class Controller implements Initializable {
         alert.setTitle("Error");
         alert.setHeaderText(headerText);
         alert.setContentText(contentText);
+        alert.show();
+    }
+
+    private void showInfoDialog(String headerText) {
+        Alert alert = new Alert(Alert.AlertType.INFORMATION);
+        alert.setTitle("Information");
+        alert.setHeaderText(headerText);
+        // alert.setContentText(contentText);
         alert.show();
     }
 }
