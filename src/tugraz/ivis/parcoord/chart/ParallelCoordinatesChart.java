@@ -25,7 +25,16 @@ public class ParallelCoordinatesChart extends Chart {
         this.axisLabels = axisLabels;
     }
 
-    public void drawPathsForDataset() {
+    public void redraw() {
+        getChartChildren().clear();
+        drawAxes();
+        drawRecords();
+    }
+
+    private void drawAxes() {
+    }
+
+    private void drawRecords() {
         double axisSeparation = (width / data.length);
         int numRecords = data[0].size();
         int numColumns = data.length;
@@ -70,7 +79,7 @@ public class ParallelCoordinatesChart extends Chart {
             System.out.println("Data doesnt add up");
             return;
         }
-        getChartChildren().clear();
-        drawPathsForDataset();
+
+        redraw();
     }
 }
