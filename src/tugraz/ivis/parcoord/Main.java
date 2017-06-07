@@ -19,7 +19,7 @@ public class Main extends Application {
         Controller controller = loader.getController();
         controller.setStage(primaryStage);
         primaryStage.show();
-        //DataModel dm = new DataModel("C:\\Users\\mchegini\\Documents\\NetBeansProjects\\PaCoPlot\\parcoord-fx\\src\\data\\auto3.csv", ";", true);
+        controller.initTestGraphData();
     }
 
     public static void main(String[] args) {
