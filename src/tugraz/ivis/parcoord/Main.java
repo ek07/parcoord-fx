@@ -12,7 +12,7 @@ public class Main extends Application {
     public void start(Stage primaryStage) throws Exception {
         FXMLLoader loader = new FXMLLoader(getClass().getResource("parcoord.fxml"));
         Parent root = loader.load();
-        primaryStage.setTitle("Hello World");
+        primaryStage.setTitle("Parallel Coordinates Test");
         Scene scene = new Scene(root);
         primaryStage.setScene(scene);
 
