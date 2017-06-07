@@ -32,21 +32,43 @@ public class ParallelCoordinatesChart extends Chart {
     }
 
     private void drawAxes() {
+        double axisSeparation = getAxisSeparation();
+        int numAxes = data.length - 1; // TODO: remove later, for now because of Categories in datamodel
+
+        for (int iAxis = 0; iAxis < numAxes; iAxis++) {
+            Path path = new Path();
+            double xPos = axisSeparation + axisSeparation * iAxis;
+
+            MoveTo moveTo = new MoveTo();
+            moveTo.setX(xPos);
+            moveTo.setY(0);
+            path.getElements().add(moveTo);
+
+            LineTo lineTo = new LineTo();
+            lineTo.setX(xPos);
+            lineTo.setY(height);
+            path.getElements().add(lineTo);
+
+            getChartChildren().add(path);
+            //System.out.println("xPos" + xPos + " height" + height);
+            // TODO labeling
+        }
     }
 
+
     private void drawRecords() {
-        double axisSeparation = (width / data.length);
+        double axisSeparation = getAxisSeparation();
         int numRecords = data[0].size();
-        int numColumns = data.length;
+        int numColumns = data.length - 1; // TODO: remove later, for now because of Categories in datamodel
         //System.out.println("cols:" + numColumns + "records" + numRecords);
         for (int record = 0; record < numRecords; record++) {
             Path path = new Path();
             MoveTo moveTo = new MoveTo();
-            moveTo.setX(0);
+            moveTo.setX(axisSeparation);
             moveTo.setY(height / 2 - top);
 
             path.getElements().add(moveTo);
-            for (int column = 0; column < data.length; column++) {
+            for (int column = 0; column < numColumns; column++) {
                 Object dataPoint = data[column].get(record);
 
                 if (dataPoint instanceof String) {
@@ -57,13 +79,17 @@ public class ParallelCoordinatesChart extends Chart {
                 //System.out.println("data at " + record + ", col:" + column + ";" + "dataPoint" + value);
                 if (value != null) {
                     LineTo lineTo = new LineTo();
-                    lineTo.setX(axisSeparation * column);
+                    lineTo.setX(axisSeparation + axisSeparation * column);
                     lineTo.setY(height - (height * value));
                     path.getElements().add(lineTo);
                 }
             }
             getChartChildren().add(path);
         }
+    }
+
+    private double getAxisSeparation() {
+        return (width / (data.length + 1));
     }
 
     @Override
