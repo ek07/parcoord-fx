@@ -1,4 +1,4 @@
-package tugraz.ivis.parcoord.chart;
+package tugraz.ivis.parcoord.gui.chart;
 
 
 import javafx.scene.chart.Chart;

@@ -10,13 +10,15 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import javafx.collections.FXCollections;
+import javafx.collections.ObservableList;
 
 /**
  * FileModel stores the information in a .CSV file (High dimensional data set)
  *
  * @author Lin Shao
  */
-public class DataModel {
+public final class DataModel {
 
     /**
      * what is the delimiter
@@ -40,10 +42,26 @@ public class DataModel {
     private ArrayList<Object>[] dataSet;
 
     /**
+     * ObservableList of all items
+     */
+    private ObservableList<Item> items = FXCollections.observableArrayList();
+
+    /**
+     *
+     */
+    private int nrItems = 0;
+
+    /**
+     * ObservableList of selected items
+     */
+    private ObservableList<Item> selectedItems = FXCollections.observableArrayList();
+
+    /**
      * Min and Max value of every dimension. First value in Double[] is min and
      * second is max
      */
     private ArrayList<Double[]> minMaxValues;
+
     private ArrayList<Integer> classIndex;
 
     /**
@@ -51,11 +69,15 @@ public class DataModel {
      * categories and each category includes 3 clusters)
      */
     private int nrOfCatDim;
+
+    /**
+     * name of clusters
+     */
     private ArrayList<String> classNames = new ArrayList<>();
 
     /**
-     * Constructor for creating a new DataModel, e.g.
-     * new DataModel(file.getAbsolutePath(), ";", true);
+     * Constructor for creating a new DataModel, e.g. new
+     * DataModel(file.getAbsolutePath(), ";", true);
      *
      * @param path the file path
      * @param delimiter e.g. ; or :
@@ -76,6 +98,17 @@ public class DataModel {
         } catch (IOException ex) {
             Logger.getLogger(DataModel.class.getName()).log(Level.SEVERE, null, ex);
         }
+
+        /**
+         * add items
+         */
+        for (int i = 0; i < nrItems; i++) {
+            items.add(getNodeByIndex(i));
+        }
+
+        items.stream().forEach((item) -> {
+            System.out.println(item);
+        });
     }
 
     /**
@@ -132,6 +165,7 @@ public class DataModel {
                             minMaxValues.get(i)[1] = (minMaxValues.get(i)[1] < value) ? value : minMaxValues.get(i)[1];     //max
                         } else {
                             dataSet[i].add(values[i]);
+                            nrItems++;
                         }
                     } //for iris data set no class information!
                     else {
@@ -159,7 +193,7 @@ public class DataModel {
         ArrayList<Object>[] normalizedData = new ArrayList[data.length];
 
         for (int i = 0; i < data.length; i++) {
-            normalizedData[i] = new ArrayList<Object>();
+            normalizedData[i] = new ArrayList<>();
             for (int j = 0; j < data[i].size(); j++) {
 
                 if (data[i].get(j) != null) {
@@ -201,6 +235,34 @@ public class DataModel {
 
     public String getHeaderAt(int index) {
         return dataHeader.get(index);
+    }
+
+    public ObservableList<Item> getItems() {
+        return items;
+    }
+
+    public ObservableList<Item> getSelectedItems() {
+        return selectedItems;
+    }
+
+    public ArrayList<Double[]> getMinMaxValues() {
+        return minMaxValues;
+    }
+
+    public int getNrOfCatDim() {
+        return nrOfCatDim;
+    }
+
+    public void setItems(ObservableList<Item> items) {
+        this.items = items;
+    }
+
+    public void setSelectedItems(ObservableList<Item> selectedItems) {
+        this.selectedItems = selectedItems;
+    }
+
+    public int getNrItems() {
+        return nrItems;
     }
 
     public int getHeaderIndex(String name) {
@@ -255,7 +317,7 @@ public class DataModel {
      * @param index index of the node
      * @return ArrayList of attributes
      */
-    public ArrayList<Object> getNodeByIndex(int index) {
+    public Item getNodeByIndex(int index) {
 
         int size = getDataSet().length;
 
@@ -263,8 +325,8 @@ public class DataModel {
         for (int i = 0; i < size; i++) {
             result.add(getDataSet()[i].get(index));
         }
+        return new Item(nrOfAttributes, nrOfCatDim, result);
 
-        return result;
     }
 
     /**
@@ -273,14 +335,13 @@ public class DataModel {
      * @param index
      * @return
      */
-    public ArrayList<Object> getNodeWithoutCategory(int index) {
+    public Item getNodeWithoutCategory(int index) {
 
         ArrayList<Object> result = new ArrayList<>();
         for (int i = 0; i < getNumberAttributes(); i++) {
             result.add(getDataSet()[i].get(index));
         }
-
-        return result;
+        return new Item(nrOfAttributes, nrOfCatDim, result);
     }
 
     /**
