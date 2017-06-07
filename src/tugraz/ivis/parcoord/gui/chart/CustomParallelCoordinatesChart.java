@@ -6,11 +6,17 @@
 
 package tugraz.ivis.parcoord.gui.chart;
 
+import tugraz.ivis.parcoord.util.importer.DataModel;
+
 /**
  * This class support additional functionalities than ParallelCoordinatesChart
  * e.g. new interactions, listeners etc.
  * @author mchegini
  */
 public class CustomParallelCoordinatesChart extends ParallelCoordinatesChart {
+
+    public CustomParallelCoordinatesChart(DataModel dataModel) {
+        super(dataModel);
+    }
     
 }
