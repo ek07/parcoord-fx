@@ -71,6 +71,7 @@ public class Controller implements Initializable {
 
         if (dm != null) {
             dm.printDataSet();
+            setDataModelToGraph(dm);
         }
     }
 
@@ -86,17 +87,19 @@ public class Controller implements Initializable {
         Alert alert = new Alert(Alert.AlertType.INFORMATION);
         alert.setTitle("Information");
         alert.setHeaderText(headerText);
-        // alert.setContentText(contentText);
         alert.show();
     }
 
-    //TODO: this is just a hack for testing
+    public void setDataModelToGraph(DataModel dm) {
+        parcoordChart.setData(dm.getDataSet(), dm.getDataHeader());
+        parcoordChart.redraw();
+    }
+
+    //TODO: this is just a "hack" for testing
     public void initTestGraphData() {
         // TODO: hardcoded path because its simply quicker for now
         DataModel dm = new DataModel("/home/thorsten/Uni/master/Sem3/InfoVis/Ass3/parcoord-fx/src/data/auto3.csv", ";", true);
         //new DataModel("C:\\Users\\mchegini\\Documents\\NetBeansProjects\\PaCoPlot\\parcoord-fx\\src\\data\\auto3.csv", ";", true);
-        parcoordChart.setData(dm.getDataSet(), dm.getDataHeader());
-        //parcoordChart.layout();
-        parcoordChart.redraw();
+        setDataModelToGraph(dm);
     }
 }

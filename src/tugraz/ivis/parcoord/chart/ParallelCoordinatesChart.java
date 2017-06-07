@@ -23,21 +23,56 @@ public class ParallelCoordinatesChart extends Chart {
     public void setData(ArrayList<Object>[] data, ArrayList<String> axisLabels) {
         this.data = data;
         this.axisLabels = axisLabels;
+        System.out.println("imported records: " + data[0].size() + " with columns:" + data.length);
     }
 
     public void redraw() {
         getChartChildren().clear();
+        drawBorder();
         drawAxes();
         drawRecords();
+        //drawRecords(); // for testing 3-time-overlay
+        //drawRecords(); // for testing 3-time-overlay
+    }
+
+    private void drawBorder() {
+        Path path = new Path();
+
+        MoveTo moveTo = new MoveTo();
+        moveTo.setX(0);
+        moveTo.setY(0);
+        path.getElements().add(moveTo);
+
+        LineTo lineTo = new LineTo();
+        lineTo.setX(width);
+        lineTo.setY(0);
+        path.getElements().add(lineTo);
+
+        lineTo = new LineTo();
+        lineTo.setX(width);
+        lineTo.setY(height);
+        path.getElements().add(lineTo);
+
+        lineTo = new LineTo();
+        lineTo.setX(0);
+        lineTo.setY(height);
+        path.getElements().add(lineTo);
+
+        lineTo = new LineTo();
+        lineTo.setX(0);
+        lineTo.setY(0);
+        path.getElements().add(lineTo);
+
+        getChartChildren().add(path);
     }
 
     private void drawAxes() {
         double axisSeparation = getAxisSeparation();
-        int numAxes = data.length - 1; // TODO: remove later, for now because of Categories in datamodel
+        int numAxes = data.length - 1; // TODO: remove -1 later, for now because of Categories in datamodel
 
         for (int iAxis = 0; iAxis < numAxes; iAxis++) {
             Path path = new Path();
-            double xPos = axisSeparation + axisSeparation * iAxis;
+            double xPos = axisSeparation + axisSeparation * iAxis; // dont start completely at edge
 
             MoveTo moveTo = new MoveTo();
             moveTo.setX(xPos);
@@ -59,12 +94,12 @@ public class ParallelCoordinatesChart extends Chart {
     private void drawRecords() {
         double axisSeparation = getAxisSeparation();
         int numRecords = data[0].size();
-        int numColumns = data.length - 1; // TODO: remove later, for now because of Categories in datamodel
+        int numColumns = data.length - 1; // TODO: remove -1 later, for now because of Categories in datamodel
         //System.out.println("cols:" + numColumns + "records" + numRecords);
         for (int record = 0; record < numRecords; record++) {
             Path path = new Path();
             MoveTo moveTo = new MoveTo();
-            moveTo.setX(axisSeparation);
+            moveTo.setX(axisSeparation); // dont start completely at edge
             moveTo.setY(height / 2 - top);
 
             path.getElements().add(moveTo);
@@ -89,7 +124,7 @@ public class ParallelCoordinatesChart extends Chart {
     }
 
     private double getAxisSeparation() {
-        return (width / (data.length + 1));
+        return (width / ((data.length + 1) - 1)); // TODO: remove -1 later, for now because of Categories in datamodel
     }
 
     @Override
