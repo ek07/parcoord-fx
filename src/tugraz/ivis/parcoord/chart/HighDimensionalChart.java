@@ -7,22 +7,12 @@ package tugraz.ivis.parcoord.chart;
 
 import javafx.collections.ObservableList;
 import javafx.scene.chart.Chart;
-import tugraz.ivis.parcoord.util.importer.DataModel;
 
 /**
  * @author mchegini
  */
 public class HighDimensionalChart extends Chart implements Brushable {
-
-    // TODO remove this and e.g.
-    private DataModel dataModel;
-
     public HighDimensionalChart() {
-    }
-
-    public HighDimensionalChart(DataModel dataModel) {
-        super();
-        this.dataModel = dataModel;
     }
 
     @Override

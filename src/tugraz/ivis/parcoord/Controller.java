@@ -91,8 +91,7 @@ public class Controller implements Initializable {
     }
 
     public void setDataModelToGraph(DataModel dm) {
-        parcoordChart.setData(dm.getDataSet(), dm.getDataHeader());
-        parcoordChart.redraw();
+        parcoordChart.updateData(dm.getDataSet(), dm.getDataHeader());
     }
 
     //TODO: this is just a "hack" for testing

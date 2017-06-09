@@ -1,13 +1,12 @@
 package tugraz.ivis.parcoord.chart;
 
 
-import javafx.geometry.Side;
-import javafx.scene.chart.NumberAxis;
+import javafx.beans.binding.DoubleBinding;
+import javafx.beans.property.ReadOnlyDoubleProperty;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.LineTo;
 import javafx.scene.shape.MoveTo;
 import javafx.scene.shape.Path;
-import tugraz.ivis.parcoord.util.importer.DataModel;
 
 import java.util.ArrayList;
 
@@ -25,9 +24,9 @@ public class ParallelCoordinatesChart extends HighDimensionalChart {
 
     }
 
-    // TODO Remove
-    public ParallelCoordinatesChart(DataModel dataModel) {
-        super(dataModel);
+    public void updateData(ArrayList<Object>[] data, ArrayList<String> axisLabels) {
+        setData(data, axisLabels);
+        bindData();
     }
 
     public void setData(ArrayList<Object>[] data, ArrayList<String> axisLabels) {
@@ -35,26 +34,28 @@ public class ParallelCoordinatesChart extends HighDimensionalChart {
         this.axisLabels = axisLabels;
         System.out.println("imported records: " + data[0].size() + " with columns:" + data.length);
 
-        NumberAxis nx = new NumberAxis(0, 10, 1);
-        nx.setSide(Side.LEFT);
-        nx.minHeightProperty().bind(heightProperty());
-        nx.prefHeightProperty().bind(heightProperty());
-        getChartChildren().add(nx);
-       /* Circle circle = new Circle(30);
-        circle.centerXProperty().bind(widthProperty().divide(2));
-        circle.centerYProperty().bind(heightProperty().divide(2));
-        getChartChildren().add(circle);*/
+        //   NumberAxis nx = new NumberAxis(0, 10, 1);
+        // nx.setSide(Side.LEFT);
+        //nx.minHeightProperty().bind(heightProperty());
+        //nx.prefHeightProperty().bind(heightProperty());
+        //getChartChildren().add(nx);
     }
 
-    public void redraw() {
-        //getChartChildren().clear();
+    // binds the set data to the graph
+    public void bindData() {
         //drawBorder();
         //drawAxes();
-        drawRecords();
-        //drawRecords(); // for testing 3-time-overlay
-        //drawRecords(); // for testing 3-time-overlay
+        bindRecords();
+        System.out.println("heightProperty" + heightProperty().doubleValue() + "|height:" + height + "|innerheight:" + innerHeightProperty());
     }
 
+
+    public void forceRedraw() {
+        getChartChildren().clear();
+        bindData();
+    }
+
+    // TODO: not needed for now
     private void drawBorder() {
         Path path = new Path();
 
@@ -86,6 +87,7 @@ public class ParallelCoordinatesChart extends HighDimensionalChart {
         getChartChildren().add(path);
     }
 
+    // TODO: thomas
     private void drawAxes() {
         double axisSeparation = getAxisSeparation();
         int numAxes = data.length - 1; // TODO: remove -1 later, for now because of Categories in datamodel
@@ -110,7 +112,48 @@ public class ParallelCoordinatesChart extends HighDimensionalChart {
         }
     }
 
+    private void bindRecords() {
+        DoubleBinding axisSeparation = getAxisSeparationBinding();
+        ReadOnlyDoubleProperty heightProp = heightProperty();
+        System.out.println("heightProperty" + heightProperty().doubleValue() + "|height:" + height + "|innerheight:" + innerHeightProperty());
+        int numRecords = data[0].size();
+        int numColumns = data.length - 1; // TODO: remove -1 later, for now because of Categories in datamodel
+        //System.out.println("cols:" + numColumns + "records" + numRecords);
+        for (int record = 0; record < numRecords; record++) {
+            Path path = new Path();
+            MoveTo moveTo = new MoveTo();
+            moveTo.xProperty().bind(axisSeparation);
+            moveTo.yProperty().bind(heightProp.divide(2.0).subtract(top));
 
+            path.getElements().add(moveTo);
+            for (int column = 0; column < numColumns; column++) {
+                Object dataPoint = data[column].get(record);
+
+                if (dataPoint instanceof String) {
+                    break;
+                }
+
+                Double value = (Double) dataPoint;
+                //System.out.println("data at " + record + ", col:" + column + ";" + "dataPoint" + value);
+                if (value != null) {
+                    LineTo lineTo = new LineTo();
+                    lineTo.xProperty().bind(axisSeparation.add(axisSeparation.multiply(column)));
+                    lineTo.yProperty().bind(heightProp.subtract(heightProp.multiply(value)));
+                    path.getElements().add(lineTo);
+                }
+            }
+            path.setStroke(new Color(0, 0, 0, 0.2));
+            getChartChildren().add(path);
+        }
+    }
+
+    // getHeightProperty with outer values (title height, etc.) subtracted
+    // TODO thorsten: doesn't work right now, try to fix!
+    public DoubleBinding innerHeightProperty() {
+        return heightProperty().subtract(heightProperty().subtract(height));
+    }
+
+    // TODO remove when bind finished
     private void drawRecords() {
         double axisSeparation = getAxisSeparation();
         int numRecords = data[0].size();
@@ -144,6 +187,10 @@ public class ParallelCoordinatesChart extends HighDimensionalChart {
         }
     }
 
+    private DoubleBinding getAxisSeparationBinding() {
+        return widthProperty().divide(((data.length + 1) - 1)); // TODO: remove -1 later, for now because of Categories in datamodel
+    }
+
     private double getAxisSeparation() {
         return (width / ((data.length + 1) - 1)); // TODO: remove -1 later, for now because of Categories in datamodel
     }
@@ -151,8 +198,6 @@ public class ParallelCoordinatesChart extends HighDimensionalChart {
     // TODO replace redraw with binding
     @Override
     protected void layoutChartChildren(double top, double left, double width, double height) {
-        // TODO: not yet completely sure how/when this will be called
-        // for now, only during initialization?
         //System.out.println("LayoutChartChildren called");
         this.top = top;
         this.left = left;
@@ -162,7 +207,5 @@ public class ParallelCoordinatesChart extends HighDimensionalChart {
             System.out.println("Data doesnt add up");
             return;
         }
-
-        redraw();
     }
 }
