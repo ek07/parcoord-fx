@@ -87,4 +87,4 @@ fabric.properties
 # Eclipse
 .classpath
 .project
-bin/*
+/bin/
