@@ -11,6 +11,7 @@ import tugraz.ivis.parcoord.util.importer.DataModel;
 /**
  * This class support additional functionalities than ParallelCoordinatesChart
  * e.g. new interactions, listeners etc.
+ *
  * @author mchegini
  */
 public class InteractiveParallelCoordinatesChart extends ParallelCoordinatesChart {
@@ -19,4 +20,7 @@ public class InteractiveParallelCoordinatesChart extends ParallelCoordinatesChar
         super(dataModel);
     }
 
+    public InteractiveParallelCoordinatesChart() {
+
+    }
 }

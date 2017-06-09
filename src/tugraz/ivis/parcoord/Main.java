@@ -12,14 +12,14 @@ public class Main extends Application {
     public void start(Stage primaryStage) throws Exception {
         FXMLLoader loader = new FXMLLoader(getClass().getResource("parcoord.fxml"));
         Parent root = loader.load();
-        primaryStage.setTitle("Hello World");
+        primaryStage.setTitle("Parallel Coordinates Test");
         Scene scene = new Scene(root);
         primaryStage.setScene(scene);
 
         Controller controller = loader.getController();
         controller.setStage(primaryStage);
         primaryStage.show();
-        //DataModel dm = new DataModel("C:\\Users\\mchegini\\Documents\\NetBeansProjects\\PaCoPlot\\parcoord-fx\\src\\data\\auto3.csv", ";", true);
+        controller.initTestGraphData();
     }
 
     public static void main(String[] args) {
