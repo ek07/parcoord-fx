@@ -83,3 +83,8 @@ fabric.properties
 *.mf
 *.xml
 /dist/
+
+# Eclipse
+.classpath
+.project
+bin/*
