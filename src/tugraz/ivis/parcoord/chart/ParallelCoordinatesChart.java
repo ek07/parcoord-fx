@@ -1,6 +1,9 @@
 package tugraz.ivis.parcoord.chart;
 
 
+import javafx.geometry.Side;
+import javafx.scene.chart.NumberAxis;
+import javafx.scene.paint.Color;
 import javafx.scene.shape.LineTo;
 import javafx.scene.shape.MoveTo;
 import javafx.scene.shape.Path;
@@ -31,6 +34,12 @@ public class ParallelCoordinatesChart extends HighDimensionalChart {
         this.data = data;
         this.axisLabels = axisLabels;
         System.out.println("imported records: " + data[0].size() + " with columns:" + data.length);
+
+        NumberAxis nx = new NumberAxis(0, 10, 1);
+        nx.setSide(Side.LEFT);
+        nx.minHeightProperty().bind(heightProperty());
+        nx.prefHeightProperty().bind(heightProperty());
+        getChartChildren().add(nx);
        /* Circle circle = new Circle(30);
         circle.centerXProperty().bind(widthProperty().divide(2));
         circle.centerYProperty().bind(heightProperty().divide(2));
@@ -38,9 +47,9 @@ public class ParallelCoordinatesChart extends HighDimensionalChart {
     }
 
     public void redraw() {
-        getChartChildren().clear();
-        drawBorder();
-        drawAxes();
+        //getChartChildren().clear();
+        //drawBorder();
+        //drawAxes();
         drawRecords();
         //drawRecords(); // for testing 3-time-overlay
         //drawRecords(); // for testing 3-time-overlay
@@ -130,6 +139,7 @@ public class ParallelCoordinatesChart extends HighDimensionalChart {
                     path.getElements().add(lineTo);
                 }
             }
+            path.setStroke(new Color(0, 0, 0, 0.2git));
             getChartChildren().add(path);
         }
     }
