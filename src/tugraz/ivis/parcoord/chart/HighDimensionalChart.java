@@ -3,23 +3,22 @@
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
  */
-package tugraz.ivis.parcoord.gui.chart;
+package tugraz.ivis.parcoord.chart;
 
 import javafx.collections.ObservableList;
 import javafx.scene.chart.Chart;
-import tugraz.ivis.parcoord.util.importer.Brushable;
 import tugraz.ivis.parcoord.util.importer.DataModel;
-import tugraz.ivis.parcoord.util.importer.Item;
 
 /**
  *
  * @author mchegini
  */
-public class HDChart extends Chart implements Brushable {
+public class HighDimensionalChart extends Chart implements Brushable {
 
+    // TODO remove this and e.g.
     private DataModel dataModel;
 
-    public HDChart(DataModel dataModel) {
+    public HighDimensionalChart(DataModel dataModel) {
         super();
         this.dataModel = dataModel;
     }
@@ -30,12 +29,12 @@ public class HDChart extends Chart implements Brushable {
     }
 
     @Override
-    public void removeSelectItems(ObservableList<Item> items) {
+    public void removeSelectItems(ObservableList<Record> records) {
         throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
     }
 
     @Override
-    public void addSelectItems(ObservableList<Item> items) {
+    public void addSelectItems(ObservableList<Record> records) {
         throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
     }
 

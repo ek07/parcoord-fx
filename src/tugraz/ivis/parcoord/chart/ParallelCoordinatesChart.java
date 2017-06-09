@@ -1,11 +1,11 @@
-package tugraz.ivis.parcoord.gui.chart;
+package tugraz.ivis.parcoord.chart;
 
 
 import tugraz.ivis.parcoord.util.importer.DataModel;
 
 // TODO: implement basic graph here
 // TODO: this is basically only a bit of "playing around" for now
-public class ParallelCoordinatesChart extends HDChart {
+public class ParallelCoordinatesChart extends HighDimensionalChart {
 
     public ParallelCoordinatesChart(DataModel dataModel) {
         super(dataModel);

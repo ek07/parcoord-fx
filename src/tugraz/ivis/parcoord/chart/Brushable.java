@@ -3,7 +3,7 @@
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
  */
-package tugraz.ivis.parcoord.util.importer;
+package tugraz.ivis.parcoord.chart;
 
 import javafx.collections.ObservableList;
 
@@ -17,18 +17,18 @@ import javafx.collections.ObservableList;
 public interface Brushable {
 
     /**
-     * remove already selected items from items list
+     * remove already selected records from records list
      *
-     * @param items items to be deselected
+     * @param records records to be deselected
      */
-    public void removeSelectItems(ObservableList<Item> items);
+    public void removeSelectItems(ObservableList<Record> records);
 
     /**
-     * add new items to selected and then draw them
+     * add new records to selected and then draw them
      *
-     * @param items items to be add to selected
+     * @param records records to be add to selected
      */
-    public void addSelectItems(ObservableList<Item> items);
+    public void addSelectItems(ObservableList<Record> records);
 
     /**
      * redraw everything according to selected items

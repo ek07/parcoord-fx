@@ -7,7 +7,7 @@ import javafx.scene.control.Alert;
 import javafx.scene.layout.AnchorPane;
 import javafx.stage.FileChooser;
 import javafx.stage.Stage;
-import tugraz.ivis.parcoord.gui.chart.ParallelCoordinatesChart;
+import tugraz.ivis.parcoord.chart.ParallelCoordinatesChart;
 import tugraz.ivis.parcoord.util.importer.DataModel;
 
 import java.io.File;

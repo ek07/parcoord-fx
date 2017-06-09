@@ -3,9 +3,7 @@
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
  */
-package tugraz.ivis.parcoord.util.importer;
-
-import tugraz.ivis.parcoord.chart.Record;
+package tugraz.ivis.parcoord.chart;
 
 import java.util.ArrayList;
 
@@ -14,31 +12,28 @@ import java.util.ArrayList;
  *
  * @author mchegini
  */
-public class Item {
-
+// TODO: remove Item and incorporate this into DataModel
+public class Record {
+    // TODO: think of more complex index handling (e.g. two indices with same values??)
     /**
      * unique index of item
      */
-    private int index;
+    private int index = -1;
 
     /**
      * ArrayList of all attributes
      */
     private ArrayList<Object> attributes = new ArrayList<>();
 
-    /**
-     * number of attributes
-     */
-    private int nrOfAttributes;
+    public Record() {
+    }
 
-    /**
-     * number of category dimensions
-     */
-    private int nrOfCatDim;
+    public Record(ArrayList<Object> attributes) {
+        this.attributes = attributes;
+    }
 
-    public Item(int nrOfAttributes, int nrOfCatDim, ArrayList<Object> attributes) {
-        this.nrOfAttributes = nrOfAttributes;
-        this.nrOfCatDim = nrOfCatDim;
+    public Record(int index, ArrayList<Object> attributes) {
+        this.index = index;
         this.attributes = attributes;
     }
 
@@ -50,14 +45,6 @@ public class Item {
         return attributes;
     }
 
-    public int getNrOfAttributes() {
-        return nrOfAttributes;
-    }
-
-    public int getNrOfCatDim() {
-        return nrOfCatDim;
-    }
-
     public void setIndex(int index) {
         this.index = index;
     }
@@ -66,27 +53,14 @@ public class Item {
         this.attributes = attributes;
     }
 
-    public void setNrOfAttributes(int nrOfAttributes) {
-        this.nrOfAttributes = nrOfAttributes;
-    }
-
-    public void setNrOfCatDim(int nrOfCatDim) {
-        this.nrOfCatDim = nrOfCatDim;
-    }
-
     @Override
     public String toString() {
         String result = "";
+        int nrOfAttributes = getAttributes().size();
         for (int i = 0; i < nrOfAttributes; i++) {
             result = result + " " + this.getAttributes().get(i);
         }
         return result;
-    }
-
-    // TODO: implement
-    public Record convertToRecord() {
-        // TODO
-        return null;
     }
 
 }

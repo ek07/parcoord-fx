@@ -4,7 +4,7 @@
  * and open the template in the editor.
  */
 
-package tugraz.ivis.parcoord.gui.chart;
+package tugraz.ivis.parcoord.chart;
 
 import tugraz.ivis.parcoord.util.importer.DataModel;
 
@@ -13,10 +13,10 @@ import tugraz.ivis.parcoord.util.importer.DataModel;
  * e.g. new interactions, listeners etc.
  * @author mchegini
  */
-public class CustomParallelCoordinatesChart extends ParallelCoordinatesChart {
+public class InteractiveParallelCoordinatesChart extends ParallelCoordinatesChart {
 
-    public CustomParallelCoordinatesChart(DataModel dataModel) {
+    public InteractiveParallelCoordinatesChart(DataModel dataModel) {
         super(dataModel);
     }
-    
+
 }
