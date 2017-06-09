@@ -139,7 +139,7 @@ public class ParallelCoordinatesChart extends HighDimensionalChart {
                     path.getElements().add(lineTo);
                 }
             }
-            path.setStroke(new Color(0, 0, 0, 0.2git));
+            path.setStroke(new Color(0, 0, 0, 0.2));
             getChartChildren().add(path);
         }
     }
