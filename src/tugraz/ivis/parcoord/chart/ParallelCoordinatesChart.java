@@ -2,7 +2,18 @@ package tugraz.ivis.parcoord.chart;
 
 
 import javafx.beans.binding.DoubleBinding;
+import javafx.beans.property.DoubleProperty;
+import javafx.beans.property.IntegerProperty;
+import javafx.beans.property.Property;
 import javafx.beans.property.ReadOnlyDoubleProperty;
+import javafx.geometry.Insets;
+import javafx.geometry.Pos;
+import javafx.geometry.Side;
+import javafx.scene.chart.Axis;
+import javafx.scene.chart.NumberAxis;
+import javafx.scene.control.Label;
+import javafx.scene.layout.HBox;
+import javafx.scene.layout.Region;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.LineTo;
 import javafx.scene.shape.MoveTo;
@@ -15,10 +26,12 @@ import java.util.ArrayList;
 public class ParallelCoordinatesChart extends HighDimensionalChart {
     private ArrayList<Object>[] data;// => list of columns
     private ArrayList<String> axisLabels;
+    private ArrayList<ParallelCoordinatesAxis> axes = new ArrayList<ParallelCoordinatesAxis>();
     private double top;
     private double left;
     private double width;
     private double height;
+    private boolean showLabels = true;
 
     public ParallelCoordinatesChart() {
 
@@ -33,18 +46,13 @@ public class ParallelCoordinatesChart extends HighDimensionalChart {
         this.data = data;
         this.axisLabels = axisLabels;
         System.out.println("imported records: " + data[0].size() + " with columns:" + data.length);
-
-        //   NumberAxis nx = new NumberAxis(0, 10, 1);
-        // nx.setSide(Side.LEFT);
-        //nx.minHeightProperty().bind(heightProperty());
-        //nx.prefHeightProperty().bind(heightProperty());
-        //getChartChildren().add(nx);
     }
 
     // binds the set data to the graph
     public void bindData() {
         //drawBorder();
-        //drawAxes();
+    	
+        bindAxes();
         bindRecords();
         System.out.println("heightProperty" + heightProperty().doubleValue() + "|height:" + height + "|innerheight:" + innerHeightProperty());
     }
@@ -87,29 +95,59 @@ public class ParallelCoordinatesChart extends HighDimensionalChart {
         getChartChildren().add(path);
     }
 
-    // TODO: thomas
-    private void drawAxes() {
-        double axisSeparation = getAxisSeparation();
+    private void bindAxes() {
         int numAxes = data.length - 1; // TODO: remove -1 later, for now because of Categories in datamodel
-
+        
+    	// configurable
+        double spaceBetweenTicks = 50;
+        double labelMinWidth = 500;
+        double labelYOffset = 50;
+        
         for (int iAxis = 0; iAxis < numAxes; iAxis++) {
-            Path path = new Path();
-            double xPos = axisSeparation + axisSeparation * iAxis; // dont start completely at edge
+           
+            String label = null;
+            if (axisLabels.size() - 1 >= iAxis) {
+            	label = axisLabels.get(iAxis);
+            }
+            
+            DoubleBinding trueAxisSeparation = getAxisSeparationBinding().multiply(iAxis + 1);
+            
+            // TODO get real bounds
+            double upperBound = 10.0;
+            double lowerBound = 0.0;
+            double delta = Math.abs(upperBound - lowerBound);
+            NumberAxis numberAxis = new NumberAxis(null, lowerBound, upperBound, 1.0);
+            
+            numberAxis.setSide(Side.LEFT);
+            numberAxis.setMinorTickVisible(false);
+            numberAxis.setAnimated(false);
+            numberAxis.translateXProperty().bind(trueAxisSeparation);
+            numberAxis.tickUnitProperty().bind(heightProperty().divide(heightProperty()).divide(heightProperty()).multiply(spaceBetweenTicks).multiply(delta));
+            
+            // label
+            Label labelNode = new Label(label);
+            labelNode.setMinWidth(labelMinWidth);
+            labelNode.setAlignment(Pos.CENTER);
+            HBox box = new HBox(labelNode);
+            box.translateXProperty().bind(trueAxisSeparation.subtract(labelMinWidth / 2));
+            box.translateYProperty().bind(heightProperty().subtract(labelYOffset));
 
-            MoveTo moveTo = new MoveTo();
-            moveTo.setX(xPos);
-            moveTo.setY(0);
-            path.getElements().add(moveTo);
-
-            LineTo lineTo = new LineTo();
-            lineTo.setX(xPos);
-            lineTo.setY(height);
-            path.getElements().add(lineTo);
-
-            getChartChildren().add(path);
-            //System.out.println("xPos" + xPos + " height" + height);
-            // TODO labeling
+            box.requestLayout();
+            box.layout();
+            
+        	getChartChildren().add(numberAxis);
+        	getChartChildren().add(box);
+        	
+            ParallelCoordinatesAxis pcAxis = new ParallelCoordinatesAxis(numberAxis, iAxis, label);
+        	axes.add(pcAxis);
         }
+        resizeAxes();
+    }
+    
+    private void resizeAxes() {
+    	for(ParallelCoordinatesAxis axis : axes) {
+    		axis.getAxis().resize(1.0, height);
+    	}
     }
 
     private void bindRecords() {
@@ -207,5 +245,6 @@ public class ParallelCoordinatesChart extends HighDimensionalChart {
             System.out.println("Data doesnt add up");
             return;
         }
+        resizeAxes();
     }
 }
