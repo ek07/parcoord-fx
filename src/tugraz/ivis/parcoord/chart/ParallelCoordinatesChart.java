@@ -24,6 +24,10 @@ public class ParallelCoordinatesChart extends Chart {
         this.data = data;
         this.axisLabels = axisLabels;
         System.out.println("imported records: " + data[0].size() + " with columns:" + data.length);
+       /* Circle circle = new Circle(30);
+        circle.centerXProperty().bind(widthProperty().divide(2));
+        circle.centerYProperty().bind(heightProperty().divide(2));
+        getChartChildren().add(circle);*/
     }
 
     public void redraw() {
@@ -127,6 +131,7 @@ public class ParallelCoordinatesChart extends Chart {
         return (width / ((data.length + 1) - 1)); // TODO: remove -1 later, for now because of Categories in datamodel
     }
 
+    // TODO replace redraw with binding
     @Override
     protected void layoutChartChildren(double top, double left, double width, double height) {
         // TODO: not yet completely sure how/when this will be called
