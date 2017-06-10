@@ -6,6 +6,8 @@ import javafx.beans.property.IntegerProperty;
 import javafx.beans.property.Property;
 import javafx.beans.property.ReadOnlyDoubleProperty;
 import javafx.beans.property.SimpleDoubleProperty;
+import javafx.beans.value.ChangeListener;
+import javafx.beans.value.ObservableValue;
 import javafx.geometry.Insets;
 import javafx.geometry.Orientation;
 import javafx.geometry.Pos;
@@ -130,7 +132,7 @@ public class ParallelCoordinatesChart extends HighDimensionalChart {
         // configurable
         double spaceBetweenTicks = 50;
         double labelMinWidth = 500;
-        double labelYOffset = 50;
+        double labelYOffset = 0;
 
         for (int iAxis = 0; iAxis < numAxes; iAxis++) {
 
@@ -168,6 +170,9 @@ public class ParallelCoordinatesChart extends HighDimensionalChart {
             vSlider.setShowTickLabels(false);
             vSlider.setShowTickMarks(false);
             vSlider.translateXProperty().bind(trueAxisSeparation);
+            vSlider.getProperties().put("axis", iAxis);
+            
+            addFilterListeners(vSlider);
             
             // add to chart
         	getChartChildren().add(numberAxis);
@@ -186,6 +191,44 @@ public class ParallelCoordinatesChart extends HighDimensionalChart {
         resizeAxes();
     }
     
+    /**
+     * Adds listeners to the given slider to be notified when high and low values change.
+     * @param slider the slider to add listeners to
+     */
+	private void addFilterListeners(RangeSlider slider) {
+		slider.highValueProperty().addListener(new ChangeListener<Number>() {
+			@Override
+			public void changed(ObservableValue<? extends Number> ov, Number oldVal, Number newVal) {
+				int axisId = (int)slider.getProperties().get("axis");
+				handleFilterChange(axisId, oldVal, newVal, true);
+			}
+		});
+		
+		slider.lowValueProperty().addListener(new ChangeListener<Number>() {
+			@Override
+			public void changed(ObservableValue<? extends Number> ov, Number oldVal, Number newVal) {
+				int axisId = (int)slider.getProperties().get("axis");
+				handleFilterChange(axisId, oldVal, newVal, false);
+			}
+		});
+	}
+	
+	/**
+	 * Handle changes to filter values.
+	 * 
+	 * @param axisId Index of the affected axis
+	 * @param oldValue Old value of the filter
+	 * @param newValue New value of the filter
+	 * @param isHighValue Indicates whether the changed value was a high value or low value
+	 */
+	private void handleFilterChange(int axisId, Number oldValue, Number newValue, boolean isHighValue) {
+		
+	}
+    
+    /**
+     * Manually resizes axes and filters to fit current dimensions. This is necessary as height and
+     * width of axes and sliders cannot be bound.
+     */
     private void resizeAxes() {
     	for(ParallelCoordinatesAxis axis : axes) {
     		axis.getAxis().resize(1.0, innerHeightProperty.doubleValue());

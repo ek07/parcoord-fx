@@ -10,8 +10,6 @@ public class ParallelCoordinatesAxis {
 	private NumberAxis axis;
 	private boolean inverted = false;
 	private int axisIndex;
-	private double upperFilter = 1.0;
-	private double lowerFilter = 0.0;
 	private String label;
 	private HBox labelBox;
 	private RangeSlider filterSlider;
@@ -42,18 +40,6 @@ public class ParallelCoordinatesAxis {
 	}
 	public void setAxisIndex(int axisIndex) {
 		this.axisIndex = axisIndex;
-	}
-	public double getUpperFilter() {
-		return upperFilter;
-	}
-	public void setUpperFilter(double upperFilter) {
-		this.upperFilter = upperFilter;
-	}
-	public double getLowerFilter() {
-		return lowerFilter;
-	}
-	public void setLowerFilter(double lowerFilter) {
-		this.lowerFilter = lowerFilter;
 	}
 	public String getLabel() {
 		return label;
