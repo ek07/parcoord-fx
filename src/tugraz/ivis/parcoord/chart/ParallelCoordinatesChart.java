@@ -139,7 +139,7 @@ public class ParallelCoordinatesChart extends HighDimensionalChart {
             numberAxis.setMinorTickVisible(false);
             numberAxis.setAnimated(false);
             numberAxis.translateXProperty().bind(trueAxisSeparation);
-            numberAxis.tickUnitProperty().bind(heightProperty().divide(heightProperty()).divide(heightProperty()).multiply(spaceBetweenTicks).multiply(delta));
+            numberAxis.tickUnitProperty().bind(innerHeightProperty.divide(innerHeightProperty).divide(innerHeightProperty).multiply(spaceBetweenTicks).multiply(delta));
 
             // label
             Label labelNode = new Label(label);
@@ -147,7 +147,7 @@ public class ParallelCoordinatesChart extends HighDimensionalChart {
             labelNode.setAlignment(Pos.CENTER);
             HBox box = new HBox(labelNode);
             box.translateXProperty().bind(trueAxisSeparation.subtract(labelMinWidth / 2));
-            box.translateYProperty().bind(heightProperty().subtract(labelYOffset));
+            box.translateYProperty().bind(innerHeightProperty.subtract(labelYOffset));
             
             // filters
             RangeSlider vSlider = new RangeSlider(lowerBound, upperBound, lowerBound, upperBound);
