@@ -72,6 +72,7 @@ public class ParallelCoordinatesChart extends HighDimensionalChart {
 
         bindAxes();
         bindRecords();
+        reorder();
     }
 
     public void forceRedraw() {
@@ -110,7 +111,19 @@ public class ParallelCoordinatesChart extends HighDimensionalChart {
 
         getChartChildren().add(path);
     }
+    
+    /**
+     * Reorders elements in the z dimensions to push certain elements to the front.
+     */
+    private void reorder() {
+    	for(ParallelCoordinatesAxis axis : axes) {
+    		axis.getFilterSlider().toFront();
+    	}
+    }
 
+    /**
+     * Creates and binds axes, axes labels and filters.
+     */
     private void bindAxes() {
         int numAxes = data.length - 1; // TODO: remove -1 later, for now because of Categories in datamodel
 
@@ -156,6 +169,7 @@ public class ParallelCoordinatesChart extends HighDimensionalChart {
             vSlider.setShowTickMarks(false);
             vSlider.translateXProperty().bind(trueAxisSeparation);
             
+            // add to chart
         	getChartChildren().add(numberAxis);
         	getChartChildren().add(box);
         	getChartChildren().add(vSlider);
