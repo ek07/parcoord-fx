@@ -1,8 +1,8 @@
 package tugraz.ivis.parcoord.chart;
 
-
 import javafx.beans.binding.DoubleBinding;
-import javafx.beans.property.ReadOnlyDoubleProperty;
+import javafx.beans.property.DoubleProperty;
+import javafx.beans.property.SimpleDoubleProperty;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.LineTo;
 import javafx.scene.shape.MoveTo;
@@ -17,11 +17,22 @@ public class ParallelCoordinatesChart extends HighDimensionalChart {
     private ArrayList<String> axisLabels;
     private double top;
     private double left;
-    private double width;
-    private double height;
 
+    /**
+     * Property holding the height of the chartContent which is updated with each layoutChartChildren call.
+     * Represents inner values (without padding, titleLabel, etc.)
+     */
+    private DoubleProperty innerHeightProperty = new SimpleDoubleProperty();
+    /**
+     * Property holding the width of the chartContent which is updated with each layoutChartChildren call.
+     * Represents inner values (without padding, etc.)
+     */
+    private DoubleProperty innerWidthProperty = new SimpleDoubleProperty();
+
+    /**
+     * Default constructor needed for FXML
+     */
     public ParallelCoordinatesChart() {
-
     }
 
     public void updateData(ArrayList<Object>[] data, ArrayList<String> axisLabels) {
@@ -41,14 +52,14 @@ public class ParallelCoordinatesChart extends HighDimensionalChart {
         //getChartChildren().add(nx);
     }
 
-    // binds the set data to the graph
+    /**
+     * Binds the set data to the graph
+     */
     public void bindData() {
         //drawBorder();
         //drawAxes();
         bindRecords();
-        System.out.println("heightProperty" + heightProperty().doubleValue() + "|height:" + height + "|innerheight:" + innerHeightProperty());
     }
-
 
     public void forceRedraw() {
         getChartChildren().clear();
@@ -65,18 +76,18 @@ public class ParallelCoordinatesChart extends HighDimensionalChart {
         path.getElements().add(moveTo);
 
         LineTo lineTo = new LineTo();
-        lineTo.setX(width);
+        lineTo.setX(innerWidthProperty.doubleValue());
         lineTo.setY(0);
         path.getElements().add(lineTo);
 
         lineTo = new LineTo();
-        lineTo.setX(width);
-        lineTo.setY(height);
+        lineTo.setX(innerWidthProperty.doubleValue());
+        lineTo.setY(innerHeightProperty.doubleValue());
         path.getElements().add(lineTo);
 
         lineTo = new LineTo();
         lineTo.setX(0);
-        lineTo.setY(height);
+        lineTo.setY(innerHeightProperty.doubleValue());
         path.getElements().add(lineTo);
 
         lineTo = new LineTo();
@@ -87,7 +98,7 @@ public class ParallelCoordinatesChart extends HighDimensionalChart {
         getChartChildren().add(path);
     }
 
-    // TODO: thomas
+    // TODO: thomas bind axes
     private void drawAxes() {
         double axisSeparation = getAxisSeparation();
         int numAxes = data.length - 1; // TODO: remove -1 later, for now because of Categories in datamodel
@@ -103,7 +114,7 @@ public class ParallelCoordinatesChart extends HighDimensionalChart {
 
             LineTo lineTo = new LineTo();
             lineTo.setX(xPos);
-            lineTo.setY(height);
+            lineTo.setY(innerHeightProperty.doubleValue());
             path.getElements().add(lineTo);
 
             getChartChildren().add(path);
@@ -112,10 +123,16 @@ public class ParallelCoordinatesChart extends HighDimensionalChart {
         }
     }
 
+
+    /**
+     * Binds the dataset to the chart.
+     * <p>
+     * TODO: why are there vertical lines at the beginning of the graph??
+     */
     private void bindRecords() {
         DoubleBinding axisSeparation = getAxisSeparationBinding();
-        ReadOnlyDoubleProperty heightProp = heightProperty();
-        System.out.println("heightProperty" + heightProperty().doubleValue() + "|height:" + height + "|innerheight:" + innerHeightProperty());
+        DoubleProperty heightProp = innerHeightProperty();
+
         int numRecords = data[0].size();
         int numColumns = data.length - 1; // TODO: remove -1 later, for now because of Categories in datamodel
         //System.out.println("cols:" + numColumns + "records" + numRecords);
@@ -147,65 +164,58 @@ public class ParallelCoordinatesChart extends HighDimensionalChart {
         }
     }
 
-    // getHeightProperty with outer values (title height, etc.) subtracted
-    // TODO thorsten: doesn't work right now, try to fix!
-    public DoubleBinding innerHeightProperty() {
-        return heightProperty().subtract(heightProperty().subtract(height));
+    /**
+     * Returns a property holding the height of the chartContent which is updated with each layoutChartChildren call.
+     * Represents inner values (without padding, titleLabel, etc.)
+     *
+     * @returns property representing the height of the chartContent
+     */
+    public DoubleProperty innerHeightProperty() {
+        return innerHeightProperty;
     }
 
-    // TODO remove when bind finished
-    private void drawRecords() {
-        double axisSeparation = getAxisSeparation();
-        int numRecords = data[0].size();
-        int numColumns = data.length - 1; // TODO: remove -1 later, for now because of Categories in datamodel
-        //System.out.println("cols:" + numColumns + "records" + numRecords);
-        for (int record = 0; record < numRecords; record++) {
-            Path path = new Path();
-            MoveTo moveTo = new MoveTo();
-            moveTo.setX(axisSeparation); // dont start completely at edge
-            moveTo.setY(height / 2 - top);
-
-            path.getElements().add(moveTo);
-            for (int column = 0; column < numColumns; column++) {
-                Object dataPoint = data[column].get(record);
-
-                if (dataPoint instanceof String) {
-                    break;
-                }
-
-                Double value = (Double) dataPoint;
-                //System.out.println("data at " + record + ", col:" + column + ";" + "dataPoint" + value);
-                if (value != null) {
-                    LineTo lineTo = new LineTo();
-                    lineTo.setX(axisSeparation + axisSeparation * column);
-                    lineTo.setY(height - (height * value));
-                    path.getElements().add(lineTo);
-                }
-            }
-            path.setStroke(new Color(0, 0, 0, 0.2));
-            getChartChildren().add(path);
-        }
+    /**
+     * Returns a property holding the width of the chartContent which is updated with each layoutChartChildren call.
+     * Represents inner values (without padding, titleLabel, etc.)
+     *
+     * @returns property representing the width of the chartContent
+     */
+    public DoubleProperty innerWidthProperty() {
+        return innerWidthProperty;
     }
 
+    /**
+     * Returns a DoubleBinding representing the horizontal space between the axes
+     * Uses a binding on innerWidthProperty and the data length
+     *
+     * @returns DoubleBinding which equals the horizontal space between axes
+     */
     private DoubleBinding getAxisSeparationBinding() {
-        return widthProperty().divide(((data.length + 1) - 1)); // TODO: remove -1 later, for now because of Categories in datamodel
+        return innerWidthProperty().divide(((data.length + 1) - 1)); // TODO: remove -1 later, for now because of Categories in datamodel
     }
 
+    // TODO: probably not needed later
     private double getAxisSeparation() {
-        return (width / ((data.length + 1) - 1)); // TODO: remove -1 later, for now because of Categories in datamodel
+        return (innerWidthProperty.doubleValue() / ((data.length + 1) - 1)); // TODO: remove -1 later, for now because of Categories in datamodel
     }
 
-    // TODO replace redraw with binding
+    /**
+     * Overwritten function of the Chart superclass.
+     * Automatically called by JavaFX after initialization and resizing of the chart.
+     * Used to update the top and left coordinates as well as the innerWidthProperty and innerHeightProperty with the
+     * updated values (after resizing the window).
+     */
     @Override
     protected void layoutChartChildren(double top, double left, double width, double height) {
-        //System.out.println("LayoutChartChildren called");
         this.top = top;
         this.left = left;
-        this.width = width;
-        this.height = height;
+        innerWidthProperty.set(width);
+        innerHeightProperty.set(height);
+
         if (data == null || axisLabels == null || data.length != axisLabels.size()) {
-            System.out.println("Data doesnt add up");
+            System.out.println("Error with data, number of axisLabels != number of axis");
             return;
         }
     }
+
 }
