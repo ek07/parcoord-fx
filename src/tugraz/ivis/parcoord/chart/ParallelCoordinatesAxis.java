@@ -1,5 +1,7 @@
 package tugraz.ivis.parcoord.chart;
 
+import org.controlsfx.control.RangeSlider;
+
 import javafx.scene.chart.NumberAxis;
 import javafx.scene.layout.HBox;
 
@@ -12,12 +14,14 @@ public class ParallelCoordinatesAxis {
 	private double lowerFilter = 0.0;
 	private String label;
 	private HBox labelBox;
+	private RangeSlider filterSlider;
 
-	public ParallelCoordinatesAxis(NumberAxis axis, int axisIndex, String label, HBox labelBox) {
+	public ParallelCoordinatesAxis(NumberAxis axis, int axisIndex, String label, HBox labelBox, RangeSlider filterSlider) {
 		this.axis = axis;
 		this.axisIndex = axisIndex;
 		this.label = label;
 		this.labelBox = labelBox;
+		this.filterSlider = filterSlider;
 	}
 	
 	
@@ -57,6 +61,8 @@ public class ParallelCoordinatesAxis {
 	public HBox getLabelBox() {
 		return labelBox;
 	}
-	
+	public RangeSlider getFilterSlider() {
+		return filterSlider;
+	}
 	
 }

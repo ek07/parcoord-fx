@@ -7,12 +7,15 @@ import javafx.beans.property.IntegerProperty;
 import javafx.beans.property.Property;
 import javafx.beans.property.ReadOnlyDoubleProperty;
 import javafx.geometry.Insets;
+import javafx.geometry.Orientation;
 import javafx.geometry.Pos;
 import javafx.geometry.Side;
+import javafx.scene.Node;
 import javafx.scene.chart.Axis;
 import javafx.scene.chart.NumberAxis;
 import javafx.scene.control.Label;
 import javafx.scene.layout.HBox;
+import javafx.scene.layout.Pane;
 import javafx.scene.layout.Region;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.LineTo;
@@ -20,6 +23,8 @@ import javafx.scene.shape.MoveTo;
 import javafx.scene.shape.Path;
 
 import java.util.ArrayList;
+
+import org.controlsfx.control.RangeSlider;
 
 // TODO: implement basic graph here
 // TODO: this is basically only a bit of "playing around" for now
@@ -134,12 +139,23 @@ public class ParallelCoordinatesChart extends HighDimensionalChart {
             box.translateXProperty().bind(trueAxisSeparation.subtract(labelMinWidth / 2));
             box.translateYProperty().bind(heightProperty().subtract(labelYOffset));
             
-        
+            // filters
+            RangeSlider vSlider = new RangeSlider(lowerBound, upperBound, lowerBound, upperBound);
+            vSlider.setOrientation(Orientation.VERTICAL);
+            vSlider.setShowTickLabels(false);
+            vSlider.setShowTickMarks(false);
+            vSlider.translateXProperty().bind(trueAxisSeparation);
             
         	getChartChildren().add(numberAxis);
         	getChartChildren().add(box);
+        	getChartChildren().add(vSlider);
         	
-            ParallelCoordinatesAxis pcAxis = new ParallelCoordinatesAxis(numberAxis, iAxis, label, box);
+        	// have to style after adding it (CSS wouldn't be accessible otherwise)
+            vSlider.applyCss();
+            vSlider.lookup(".range-slider .track").setStyle("-fx-opacity: 0;");
+            vSlider.lookup(".range-slider .range-bar").setStyle("-fx-opacity: 0.15;");
+        	
+            ParallelCoordinatesAxis pcAxis = new ParallelCoordinatesAxis(numberAxis, iAxis, label, box, vSlider);
         	axes.add(pcAxis);
         }
         resizeAxes();
@@ -148,6 +164,7 @@ public class ParallelCoordinatesChart extends HighDimensionalChart {
     private void resizeAxes() {
     	for(ParallelCoordinatesAxis axis : axes) {
     		axis.getAxis().resize(1.0, height);
+    		axis.getFilterSlider().resize(1.0, height);
     	}
     }
 
