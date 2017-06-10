@@ -1,6 +1,7 @@
 package tugraz.ivis.parcoord.chart;
 
 import javafx.scene.chart.NumberAxis;
+import javafx.scene.layout.HBox;
 
 public class ParallelCoordinatesAxis {
 	
@@ -10,11 +11,13 @@ public class ParallelCoordinatesAxis {
 	private double upperFilter = 1.0;
 	private double lowerFilter = 0.0;
 	private String label;
+	private HBox labelBox;
 
-	public ParallelCoordinatesAxis(NumberAxis axis, int axisIndex, String label) {
+	public ParallelCoordinatesAxis(NumberAxis axis, int axisIndex, String label, HBox labelBox) {
 		this.axis = axis;
 		this.axisIndex = axisIndex;
 		this.label = label;
+		this.labelBox = labelBox;
 	}
 	
 	
@@ -50,6 +53,9 @@ public class ParallelCoordinatesAxis {
 	}
 	public String getLabel() {
 		return label;
+	}
+	public HBox getLabelBox() {
+		return labelBox;
 	}
 	
 	

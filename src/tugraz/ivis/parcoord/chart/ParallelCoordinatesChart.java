@@ -116,8 +116,10 @@ public class ParallelCoordinatesChart extends HighDimensionalChart {
             double upperBound = 10.0;
             double lowerBound = 0.0;
             double delta = Math.abs(upperBound - lowerBound);
-            NumberAxis numberAxis = new NumberAxis(null, lowerBound, upperBound, 1.0);
             
+            // axis
+            NumberAxis numberAxis = new NumberAxis(null, lowerBound, upperBound, 1.0);
+         
             numberAxis.setSide(Side.LEFT);
             numberAxis.setMinorTickVisible(false);
             numberAxis.setAnimated(false);
@@ -131,14 +133,13 @@ public class ParallelCoordinatesChart extends HighDimensionalChart {
             HBox box = new HBox(labelNode);
             box.translateXProperty().bind(trueAxisSeparation.subtract(labelMinWidth / 2));
             box.translateYProperty().bind(heightProperty().subtract(labelYOffset));
-
-            box.requestLayout();
-            box.layout();
+            
+        
             
         	getChartChildren().add(numberAxis);
         	getChartChildren().add(box);
         	
-            ParallelCoordinatesAxis pcAxis = new ParallelCoordinatesAxis(numberAxis, iAxis, label);
+            ParallelCoordinatesAxis pcAxis = new ParallelCoordinatesAxis(numberAxis, iAxis, label, box);
         	axes.add(pcAxis);
         }
         resizeAxes();
