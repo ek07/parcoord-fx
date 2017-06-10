@@ -81,10 +81,12 @@ fabric.properties
 /nbproject/
 /build/
 *.mf
-*.xml
+# *.xml
 /dist/
 
 # Eclipse
 .classpath
 .project
 /bin/
+.settings/
+/target/
