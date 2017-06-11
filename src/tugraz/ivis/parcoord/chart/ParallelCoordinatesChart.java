@@ -37,6 +37,7 @@ public class ParallelCoordinatesChart extends HighDimensionalChart {
     private double top;
     private double left;
     private boolean showLabels = true;
+    private boolean useAxisFilters = true;
 
     /**
      * Property holding the height of the chartContent which is updated with each layoutChartChildren call.
@@ -119,7 +120,8 @@ public class ParallelCoordinatesChart extends HighDimensionalChart {
      */
     private void reorder() {
     	for(ParallelCoordinatesAxis axis : axes) {
-    		axis.getFilterSlider().toFront();
+    		if(axis.getFilterSlider() != null)
+    			axis.getFilterSlider().toFront();
     	}
     }
 
@@ -156,34 +158,41 @@ public class ParallelCoordinatesChart extends HighDimensionalChart {
             numberAxis.translateXProperty().bind(trueAxisSeparation);
             numberAxis.tickUnitProperty().bind(innerHeightProperty.divide(innerHeightProperty).divide(innerHeightProperty).multiply(spaceBetweenTicks).multiply(delta));
 
+        	getChartChildren().add(numberAxis);
+        	
             // label
-            Label labelNode = new Label(label);
-            labelNode.setMinWidth(labelMinWidth);
-            labelNode.setAlignment(Pos.CENTER);
-            HBox box = new HBox(labelNode);
-            box.translateXProperty().bind(trueAxisSeparation.subtract(labelMinWidth / 2));
-            box.translateYProperty().bind(innerHeightProperty.subtract(labelYOffset));
+        	HBox box = null;
+        	if(showLabels) {
+	            Label labelNode = new Label(label);
+	            labelNode.setMinWidth(labelMinWidth);
+	            labelNode.setAlignment(Pos.CENTER);
+	            box = new HBox(labelNode);
+	            box.translateXProperty().bind(trueAxisSeparation.subtract(labelMinWidth / 2));
+	            box.translateYProperty().bind(innerHeightProperty.subtract(labelYOffset));
+	            
+	        	getChartChildren().add(box);
+        	}
             
             // filters
-            RangeSlider vSlider = new RangeSlider(lowerBound, upperBound, lowerBound, upperBound);
-            vSlider.setOrientation(Orientation.VERTICAL);
-            vSlider.setShowTickLabels(false);
-            vSlider.setShowTickMarks(false);
-            vSlider.translateXProperty().bind(trueAxisSeparation);
-            vSlider.getProperties().put("axis", iAxis);
-            
-            addFilterListeners(vSlider);
-            
-            // add to chart
-        	getChartChildren().add(numberAxis);
-        	getChartChildren().add(box);
-        	getChartChildren().add(vSlider);
-        	
-        	// have to style after adding it (CSS wouldn't be accessible otherwise)
-            vSlider.applyCss();
-            vSlider.lookup(".range-slider .track").setStyle("-fx-opacity: 0;");
-            vSlider.lookup(".range-slider .range-bar").setStyle("-fx-opacity: 0.15;");
-        	
+        	RangeSlider vSlider = null;
+        	if(useAxisFilters) {
+	            vSlider = new RangeSlider(lowerBound, upperBound, lowerBound, upperBound);
+	            vSlider.setOrientation(Orientation.VERTICAL);
+	            vSlider.setShowTickLabels(false);
+	            vSlider.setShowTickMarks(false);
+	            vSlider.translateXProperty().bind(trueAxisSeparation);
+	            vSlider.getProperties().put("axis", iAxis);
+	            
+	            addFilterListeners(vSlider);
+	            
+	        	getChartChildren().add(vSlider);
+	        	
+	        	// have to style after adding it (CSS wouldn't be accessible otherwise)
+	            vSlider.applyCss();
+	            vSlider.lookup(".range-slider .track").setStyle("-fx-opacity: 0;");
+	            vSlider.lookup(".range-slider .range-bar").setStyle("-fx-opacity: 0.15;");
+        	}
+
             ParallelCoordinatesAxis pcAxis = new ParallelCoordinatesAxis(numberAxis, iAxis, label, box, vSlider);
         	axes.add(pcAxis);
 
@@ -214,7 +223,7 @@ public class ParallelCoordinatesChart extends HighDimensionalChart {
 	}
 	
 	/**
-	 * Handle changes to filter values.
+	 * Handle changes to filter values. All filters have to be checked again for newly added lines.
 	 * 
 	 * @param axisId Index of the affected axis
 	 * @param oldValue Old value of the filter
@@ -222,7 +231,50 @@ public class ParallelCoordinatesChart extends HighDimensionalChart {
 	 * @param isHighValue Indicates whether the changed value was a high value or low value
 	 */
 	private void handleFilterChange(int axisId, Number oldValue, Number newValue, boolean isHighValue) {
+		double oldV = oldValue.doubleValue();
+		double newV = newValue.doubleValue();
 		
+		ParallelCoordinatesAxis axis = getAxisById(axisId);
+		
+		if(isHighValue) {
+			if (newV > oldV) {
+				// new lines could get active - we have to check all filters for the new lines
+				
+				// TODO iterate through all lines, if a new line would be added, check the line for all other filters as well
+			}
+			else {
+				// this can only diminish the number of visible lines
+				
+				// TODO iterate through all lines and simply set them invisible if required
+			}
+		}
+		else {
+			if(newV < oldV) {
+				// new lines could get active - we have to check all filters for the new lines
+				
+				// TODO iterate through all lines, if a new line would be added, check the line for all other filters as well
+			}
+			else {
+				// this can only diminish the number of visible lines
+				
+				// TODO iterate through all lines and simply set them invisible if required
+
+			}
+		}
+	}
+	
+	/**
+	 * Returns the axis specified by the given axis id (null if it cannot be found).
+	 * 
+	 * @param axisId the index of the axis
+	 * @return the axis or null
+	 */
+	private ParallelCoordinatesAxis getAxisById(int axisId) {
+		for(ParallelCoordinatesAxis axis : axes) {
+			if(axis.getAxisIndex() == axisId)
+				return axis;
+		}
+		return null;
 	}
     
     /**
@@ -232,7 +284,9 @@ public class ParallelCoordinatesChart extends HighDimensionalChart {
     private void resizeAxes() {
     	for(ParallelCoordinatesAxis axis : axes) {
     		axis.getAxis().resize(1.0, innerHeightProperty.doubleValue());
-    		axis.getFilterSlider().resize(1.0, innerHeightProperty.doubleValue());
+    		
+    		if(axis.getFilterSlider() != null)
+    			axis.getFilterSlider().resize(1.0, innerHeightProperty.doubleValue());
     	}
     }
 
