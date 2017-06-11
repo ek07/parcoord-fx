@@ -38,6 +38,9 @@ public class ParallelCoordinatesChart extends HighDimensionalChart {
     private double left;
     private boolean showLabels = true;
     private boolean useAxisFilters = true;
+    
+    private long lastFilterHandle = 0;
+    private final static long FILTER_FREQUENCY = 500; // handle filter changes every x milliseconds
 
     /**
      * Property holding the height of the chartContent which is updated with each layoutChartChildren call.
@@ -225,18 +228,28 @@ public class ParallelCoordinatesChart extends HighDimensionalChart {
 	/**
 	 * Handle changes to filter values. All filters have to be checked again for newly added lines.
 	 * 
-	 * @param axisId Index of the affected axis
-	 * @param oldValue Old value of the filter
+	 * @param axisId Index of the affected axis0
+	 * @param oldValue Old value of the filter (not used)
 	 * @param newValue New value of the filter
 	 * @param isHighValue Indicates whether the changed value was a high value or low value
 	 */
 	private void handleFilterChange(int axisId, Number oldValue, Number newValue, boolean isHighValue) {
-		double oldV = oldValue.doubleValue();
-		double newV = newValue.doubleValue();
-		
+
+		// TODO replace this with an async solution (as this isn't working as intended)
+	    long systemTime = System.currentTimeMillis();
+	    if(systemTime - lastFilterHandle < FILTER_FREQUENCY) {
+	    	return;
+	    }
+	    lastFilterHandle = systemTime;
+
 		ParallelCoordinatesAxis axis = getAxisById(axisId);
+
+		double newV = newValue.doubleValue();
+		double oldV = 0;
 		
 		if(isHighValue) {
+			oldV = axis.getFilterHigh();
+			axis.setFilterHigh(newV);
 			if (newV > oldV) {
 				// new lines could get active - we have to check all filters for the new lines
 				
@@ -249,6 +262,8 @@ public class ParallelCoordinatesChart extends HighDimensionalChart {
 			}
 		}
 		else {
+			oldV = axis.getFilterLow();
+			axis.setFilterLow(newV);
 			if(newV < oldV) {
 				// new lines could get active - we have to check all filters for the new lines
 				
@@ -261,6 +276,8 @@ public class ParallelCoordinatesChart extends HighDimensionalChart {
 
 			}
 		}
+		
+	    System.out.println("Old: " + Double.toString(oldV) + "; New: " + Double.toString(newV));
 	}
 	
 	/**

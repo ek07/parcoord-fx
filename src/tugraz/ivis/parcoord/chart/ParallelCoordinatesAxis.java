@@ -13,6 +13,8 @@ public class ParallelCoordinatesAxis {
 	private String label;
 	private HBox labelBox;
 	private RangeSlider filterSlider;
+	private double filterHigh;
+	private double filterLow;
 
 	public ParallelCoordinatesAxis(NumberAxis axis, int axisIndex, String label, HBox labelBox, RangeSlider filterSlider) {
 		this.axis = axis;
@@ -20,6 +22,11 @@ public class ParallelCoordinatesAxis {
 		this.label = label;
 		this.labelBox = labelBox;
 		this.filterSlider = filterSlider;
+		
+		if(filterSlider != null) {
+			filterHigh = filterSlider.getHighValue();
+			filterLow = filterSlider.getLowValue();
+		}
 	}
 	
 	
@@ -49,6 +56,18 @@ public class ParallelCoordinatesAxis {
 	}
 	public RangeSlider getFilterSlider() {
 		return filterSlider;
+	}
+	public double getFilterHigh() {
+		return filterHigh;
+	}
+	public void setFilterHigh(double filterHigh) {
+		this.filterHigh = filterHigh;
+	}
+	public double getFilterLow() {
+		return filterLow;
+	}
+	public void setFilterLow(double filterLow) {
+		this.filterLow = filterLow;
 	}
 	
 }
