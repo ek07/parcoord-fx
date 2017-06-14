@@ -5,21 +5,98 @@
  */
 package tugraz.ivis.parcoord.chart;
 
+import javafx.beans.property.DoubleProperty;
+import javafx.beans.property.SimpleDoubleProperty;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.scene.chart.Chart;
+import javafx.scene.shape.LineTo;
+import javafx.scene.shape.MoveTo;
+import javafx.scene.shape.Path;
+
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * @author mchegini
  */
-public class HighDimensionalChart extends Chart implements Brushable {
+public abstract class HighDimensionalChart extends Chart implements Brushable {
+    protected ObservableList<Series> series = FXCollections.observableArrayList();
+    protected double top;
+    protected double left;
+    protected boolean showLabels = true;
+
+    /**
+     * Property holding the height of the chartContent which is updated with each layoutChartChildren call.
+     * Represents inner values (without padding, titleLabel, etc.)
+     */
+    protected DoubleProperty innerHeightProperty = new SimpleDoubleProperty();
+    /**
+     * Property holding the width of the chartContent which is updated with each layoutChartChildren call.
+     * Represents inner values (without padding, etc.)
+     */
+    protected DoubleProperty innerWidthProperty = new SimpleDoubleProperty();
+
 
     public HighDimensionalChart() {
     }
 
+    /**
+     * Draws a border around the chart
+     */
+    protected void drawBorder() {
+        Path path = new Path();
+
+        MoveTo moveTo = new MoveTo();
+        moveTo.setX(0);
+        moveTo.setY(0);
+        path.getElements().add(moveTo);
+
+        LineTo lineTo = new LineTo();
+        lineTo.setX(innerWidthProperty.doubleValue());
+        lineTo.setY(0);
+        path.getElements().add(lineTo);
+
+        lineTo = new LineTo();
+        lineTo.setX(innerWidthProperty.doubleValue());
+        lineTo.setY(innerHeightProperty.doubleValue());
+        path.getElements().add(lineTo);
+
+        lineTo = new LineTo();
+        lineTo.setX(0);
+        lineTo.setY(innerHeightProperty.doubleValue());
+        path.getElements().add(lineTo);
+
+        lineTo = new LineTo();
+        lineTo.setX(0);
+        lineTo.setY(0);
+        path.getElements().add(lineTo);
+
+        getChartChildren().add(path);
+    }
+
+
+    /**
+     * Immediately clears the whole chart and chartChildren
+     */
+    public void clear() {
+        getChartChildren().clear();
+        series.clear();
+    }
+
+    /**
+     * Overwritten function of the Chart superclass.
+     * Automatically called by JavaFX after initialization and resizing of the chart.
+     * Used to update the top and left coordinates as well as the innerWidthProperty and innerHeightProperty with the
+     * updated values (after resizing the window).
+     */
     @Override
     protected void layoutChartChildren(double top, double left, double width, double height) {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+        this.top = top;
+        this.left = left;
+        innerWidthProperty.set(width);
+        innerHeightProperty.set(height);
+        resizeAxes();
     }
 
     @Override
@@ -33,133 +110,83 @@ public class HighDimensionalChart extends Chart implements Brushable {
     }
 
     @Override
-    public void removeSelectItems(ObservableList<tugraz.ivis.parcoord.chart.Record> records) {
+    public void removeSelectItems(ObservableList<Record> records) {
         throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
     }
 
     @Override
-    public void addSelectItems(ObservableList<tugraz.ivis.parcoord.chart.Record> records) {
+    public void addSelectItems(ObservableList<Record> records) {
         throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
     }
 
-    // -------------- INNER CLASSES ------------------------------------------------------------------------------------
     /**
-     * A single record, we assumed everything is double
+     * Adds a series to the given Chart
+     * Inspired by: http://docs.oracle.com/javafx/2/charts/scatter-chart.htm
      *
-     * @author mchegini
+     * @param s the series to add to this Chart
      */
-    public final static class Record {
+    public void addSeries(Series s) {
+        boolean firstDraw = series.isEmpty();
+        series.add(s);
 
-        /**
-         * index of the record
-         */
-        private int index = -1;
-
-        /**
-         * values of the record
-         */
-        private ObservableList<Double> values = FXCollections.observableArrayList();
-
-        /**
-         * categories of the record
-         */
-        private ObservableList<String> categories = FXCollections.observableArrayList();
-
-        /**
-         * simple constructor for a record
-         *
-         * @param index unique index of the record
-         * @param values values of the record
-         * @param categories categories of the record
-         */
-        public Record(int index, ObservableList<Double> values, ObservableList<String> categories) {
-            this.index = index;
-            this.values = values;
-            this.categories = categories;
+        if (firstDraw) {
+            bindAxes();
         }
 
-        public double getAttByIndex(int index) {
-            return values.get(index);
-        }
-
-        public String getCatByIndex(int index) {
-            return categories.get(index);
-        }
-
-        public int getIndex() {
-            return index;
-        }
-
-        public ObservableList<String> getCategories() {
-            return categories;
-        }
-
-        public void setIndex(int index) {
-            this.index = index;
-        }
-
-        public void setValues(ObservableList<Double> values) {
-            this.values = values;
-        }
-
-        public void setCategories(ObservableList<String> categories) {
-            this.categories = categories;
-        }
-
+        bindSeries(s);
     }
 
     /**
-     * Series which contains set of records
+     * Removes Series from the list of all series in this Chart
+     * TODO: test
      *
-     * @author mchegini
+     * @param index of series to remove
      */
-    public static final class Series {
-
-        /**
-         * name of the series
-         */
-        private String name;
-
-        /**
-         * List of records in the series
-         */
-        private ObservableList<HighDimensionalChart.Record> records = FXCollections.observableArrayList();
-
-        public Series(String name, ObservableList<HighDimensionalChart.Record> records) {
-            this.name = name;
-            this.records = records;
-        }
-
-        public Series(ObservableList<HighDimensionalChart.Record> records) {
-            this.records = records;
-        }
-
-        public int getItemIndex(Record record) {
-            return records.indexOf(record);
-        }
-
-        public Record getRecord(int index) {
-            return records.get(index);
-        }
-
-        public String getName() {
-            return name;
-        }
-
-        public ObservableList<Record> getRecords() {
-            return records;
-        }
-
-        public void setName(String name) {
-            this.name = name;
-        }
-
-        public void setRecords(ObservableList<Record> records) {
-            this.records = records;
-        }
-
-        public int getSeriesSize() {
-            return records.size();
-        }
+    public void removeSeries(int index) {
+        removeSeries(series.get(index));
     }
+
+
+    /**
+     * Removes Series from the list of all series in this Chart
+     * TODO: test
+     *
+     * @param s the series to be removed
+     */
+    public void removeSeries(Series s) {
+        for (Record r : s.getRecords()) {
+            getChartChildren().removeAll(r.getPath());
+        }
+        series.remove(s);
+    }
+
+    /**
+     * remove all Series from the graph
+     * TODO: test
+     */
+    public void clearSeries() {
+        List<Path> paths = new ArrayList<>();
+        for (Series s : series) {
+            for (Record r : s.getRecords()) {
+                getChartChildren().removeAll(r.getPath());
+            }
+        }
+        series.clear();
+    }
+
+    /**
+     * Subclasses should implement this method to bind axes to the chart
+     */
+    protected abstract void bindAxes();
+
+    /**
+     * Subclasses should implement this method to resize axes
+     */
+    protected abstract void resizeAxes();
+
+    /**
+     * Subclasses should implement this method to bind a given series to the chart
+     * also, the paths of the records should be set accordingly
+     */
+    protected abstract void bindSeries(Series s);
 }

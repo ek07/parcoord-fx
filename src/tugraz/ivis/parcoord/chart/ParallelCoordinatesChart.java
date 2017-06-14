@@ -2,7 +2,6 @@ package tugraz.ivis.parcoord.chart;
 
 import javafx.beans.binding.DoubleBinding;
 import javafx.beans.property.DoubleProperty;
-import javafx.beans.property.SimpleDoubleProperty;
 import javafx.geometry.Pos;
 import javafx.geometry.Side;
 import javafx.scene.chart.NumberAxis;
@@ -14,27 +13,13 @@ import javafx.scene.shape.MoveTo;
 import javafx.scene.shape.Path;
 
 import java.util.ArrayList;
+import java.util.List;
 
 // TODO: implement basic graph here
 // TODO: this is basically only a bit of "playing around" for now
 public class ParallelCoordinatesChart extends HighDimensionalChart {
-    private ArrayList<Object>[] data;// => list of columns
-    private ArrayList<String> axisLabels;
-    private ArrayList<ParallelCoordinatesAxis> axes = new ArrayList<ParallelCoordinatesAxis>();
-    private double top;
-    private double left;
-    private boolean showLabels = true;
-
-    /**
-     * Property holding the height of the chartContent which is updated with each layoutChartChildren call.
-     * Represents inner values (without padding, titleLabel, etc.)
-     */
-    private DoubleProperty innerHeightProperty = new SimpleDoubleProperty();
-    /**
-     * Property holding the width of the chartContent which is updated with each layoutChartChildren call.
-     * Represents inner values (without padding, etc.)
-     */
-    private DoubleProperty innerWidthProperty = new SimpleDoubleProperty();
+    private List<String> axesLabels = new ArrayList<>();
+    private ArrayList<ParallelCoordinatesAxis> axes = new ArrayList<>();
 
     /**
      * Default constructor needed for FXML
@@ -42,66 +27,30 @@ public class ParallelCoordinatesChart extends HighDimensionalChart {
     public ParallelCoordinatesChart() {
     }
 
-    public void updateData(ArrayList<Object>[] data, ArrayList<String> axisLabels) {
-        setData(data, axisLabels);
-        bindData();
-    }
-
-    public void setData(ArrayList<Object>[] data, ArrayList<String> axisLabels) {
-        this.data = data;
-        this.axisLabels = axisLabels;
-        System.out.println("imported records: " + data[0].size() + " with columns:" + data.length);
+    /**
+     * Sets the new axesLabels
+     *
+     * @param axesLabels the labels of the axes
+     */
+    public void setAxisLabels(List<String> axesLabels) {
+        this.axesLabels = axesLabels;
     }
 
     /**
-     * Binds the set data to the graph
+     * Immediately clears the whole chart and chartChildren
      */
-    public void bindData() {
-        //drawBorder();
-
-        bindAxes();
-        bindRecords();
+    @Override
+    public void clear() {
+        super.clear();
+        axesLabels.clear();
+        axes.clear();
     }
 
-    public void forceRedraw() {
-        getChartChildren().clear();
-        bindData();
-    }
-
-    // TODO: not needed for now
-    private void drawBorder() {
-        Path path = new Path();
-
-        MoveTo moveTo = new MoveTo();
-        moveTo.setX(0);
-        moveTo.setY(0);
-        path.getElements().add(moveTo);
-
-        LineTo lineTo = new LineTo();
-        lineTo.setX(innerWidthProperty.doubleValue());
-        lineTo.setY(0);
-        path.getElements().add(lineTo);
-
-        lineTo = new LineTo();
-        lineTo.setX(innerWidthProperty.doubleValue());
-        lineTo.setY(innerHeightProperty.doubleValue());
-        path.getElements().add(lineTo);
-
-        lineTo = new LineTo();
-        lineTo.setX(0);
-        lineTo.setY(innerHeightProperty.doubleValue());
-        path.getElements().add(lineTo);
-
-        lineTo = new LineTo();
-        lineTo.setX(0);
-        lineTo.setY(0);
-        path.getElements().add(lineTo);
-
-        getChartChildren().add(path);
-    }
-
-    private void bindAxes() {
-        int numAxes = data.length - 1; // TODO: remove -1 later, for now because of Categories in datamodel
+    /**
+     * creates the axes and binds them to the Chart
+     */
+    protected void bindAxes() {
+        int numAxes = getAttributeCount();
 
         // configurable
         double spaceBetweenTicks = 50;
@@ -111,8 +60,12 @@ public class ParallelCoordinatesChart extends HighDimensionalChart {
         for (int iAxis = 0; iAxis < numAxes; iAxis++) {
 
             String label = null;
-            if (axisLabels.size() - 1 >= iAxis) {
-                label = axisLabels.get(iAxis);
+            if (axesLabels.size() - 1 >= iAxis) {
+                if (iAxis < axesLabels.size()) {
+                    label = axesLabels.get(iAxis);
+                } else {
+                    label = "?";
+                }
             }
 
             DoubleBinding trueAxisSeparation = getAxisSeparationBinding().multiply(iAxis + 1);
@@ -148,53 +101,17 @@ public class ParallelCoordinatesChart extends HighDimensionalChart {
         }
         resizeAxes();
     }
-    
-    private void resizeAxes() {
+
+    /**
+     * resizes the axes
+     * TODO: can't this be binded?
+     */
+    protected void resizeAxes() {
         for (ParallelCoordinatesAxis axis : axes) {
             axis.getAxis().resize(1.0, innerHeightProperty.doubleValue());
         }
     }
 
-
-    /**
-     * Binds the dataset to the chart.
-     * <p>
-     * TODO: why are there vertical lines at the beginning of the graph??
-     */
-    private void bindRecords() {
-        DoubleBinding axisSeparation = getAxisSeparationBinding();
-        DoubleProperty heightProp = innerHeightProperty();
-
-        int numRecords = data[0].size();
-        int numColumns = data.length - 1; // TODO: remove -1 later, for now because of Categories in datamodel
-        //System.out.println("cols:" + numColumns + "records" + numRecords);
-        for (int record = 0; record < numRecords; record++) {
-            Path path = new Path();
-            MoveTo moveTo = new MoveTo();
-            moveTo.xProperty().bind(axisSeparation);
-            moveTo.yProperty().bind(heightProp.divide(2.0).subtract(top));
-
-            path.getElements().add(moveTo);
-            for (int column = 0; column < numColumns; column++) {
-                Object dataPoint = data[column].get(record);
-
-                if (dataPoint instanceof String) {
-                    break;
-                }
-
-                Double value = (Double) dataPoint;
-                //System.out.println("data at " + record + ", col:" + column + ";" + "dataPoint" + value);
-                if (value != null) {
-                    LineTo lineTo = new LineTo();
-                    lineTo.xProperty().bind(axisSeparation.add(axisSeparation.multiply(column)));
-                    lineTo.yProperty().bind(heightProp.subtract(heightProp.multiply(value)));
-                    path.getElements().add(lineTo);
-                }
-            }
-            path.setStroke(new Color(0, 0, 0, 0.2));
-            getChartChildren().add(path);
-        }
-    }
 
     /**
      * Returns a property holding the height of the chartContent which is updated with each layoutChartChildren call.
@@ -223,27 +140,63 @@ public class ParallelCoordinatesChart extends HighDimensionalChart {
      * @returns DoubleBinding which equals the horizontal space between axes
      */
     private DoubleBinding getAxisSeparationBinding() {
-        return innerWidthProperty().divide(((data.length + 1) - 1)); // TODO: remove -1 later, for now because of Categories in datamodel
+        return innerWidthProperty().divide(getAttributeCount() + 1);
     }
 
     /**
-     * Overwritten function of the Chart superclass.
-     * Automatically called by JavaFX after initialization and resizing of the chart.
-     * Used to update the top and left coordinates as well as the innerWidthProperty and innerHeightProperty with the
-     * updated values (after resizing the window).
+     * TODO: is this the best way to get attribute/axis count
      */
+    private int getAttributeCount() {
+        int valueCount = 0;
+        if (series.size() > 0) {
+            if (series.get(0).getRecords().size() > 0) {
+                valueCount = series.get(0).getRecord(0).getValues().size();
+            }
+        }
+
+        return valueCount;
+    }
+
     @Override
     protected void layoutChartChildren(double top, double left, double width, double height) {
-        this.top = top;
-        this.left = left;
-        innerWidthProperty.set(width);
-        innerHeightProperty.set(height);
-
-        if (data == null || axisLabels == null || data.length != axisLabels.size()) {
-            System.out.println("Error with data, number of axisLabels != number of axis");
-            return;
-        }
+        super.layoutChartChildren(top, left, width, height);
         resizeAxes();
     }
 
+    @Override
+    protected void bindSeries(Series s) {
+        DoubleBinding axisSeparation = getAxisSeparationBinding();
+        DoubleProperty heightProp = innerHeightProperty();
+
+        int numRecords = s.getRecords().size();
+        int numColumns = getAttributeCount();
+        //System.out.println("cols:" + numColumns + "records" + numRecords);
+        for (Record record : s.getRecords()) {
+            Path path = new Path();
+            MoveTo moveTo = new MoveTo();
+            moveTo.xProperty().bind(axisSeparation);
+            moveTo.yProperty().bind(heightProp.divide(2.0).subtract(top));
+
+            path.getElements().add(moveTo);
+            for (int column = 0; column < numColumns; column++) {
+                Object dataPoint = record.getAttByIndex(column);
+
+                if (dataPoint instanceof String) {
+                    break;
+                }
+
+                Double value = (Double) dataPoint;
+                //System.out.println("data at " + record + ", col:" + column + ";" + "dataPoint" + value);
+                if (value != null) {
+                    LineTo lineTo = new LineTo();
+                    lineTo.xProperty().bind(axisSeparation.add(axisSeparation.multiply(column)));
+                    lineTo.yProperty().bind(heightProp.subtract(heightProp.multiply(value)));
+                    path.getElements().add(lineTo);
+                }
+            }
+            path.setStroke(new Color(0, 0, 0, 0.2));
+            record.setPath(path);
+            getChartChildren().add(path);
+        }
+    }
 }

@@ -8,6 +8,7 @@ import javafx.scene.layout.AnchorPane;
 import javafx.stage.FileChooser;
 import javafx.stage.Stage;
 import tugraz.ivis.parcoord.chart.ParallelCoordinatesChart;
+import tugraz.ivis.parcoord.chart.Series;
 import tugraz.ivis.parcoord.util.importer.DataModel;
 
 import java.io.File;
@@ -91,7 +92,10 @@ public class Controller implements Initializable {
     }
 
     public void setDataModelToGraph(DataModel dm) {
-        parcoordChart.updateData(dm.getDataSet(), dm.getDataHeader());
+        Series s = new Series(dm.getItemsAsRecords());
+        parcoordChart.clear();
+        parcoordChart.setAxisLabels(dm.getDataHeader());
+        parcoordChart.addSeries(s);
     }
 
     //TODO: this is just a "hack" for testing
@@ -100,7 +104,7 @@ public class Controller implements Initializable {
         // DataModel dm = new DataModel("/home/thorsten/Uni/master/Sem3/InfoVis/Ass3/parcoord-fx/src/data/auto3.csv", ";", true);
         //new DataModel("C:\\Users\\mchegini\\Documents\\NetBeansProjects\\PaCoPlot\\parcoord-fx\\src\\data\\auto3.csv", ";", true);
         DataModel dm = new DataModel("C:\\Users\\Thomas\\Documents\\Uni\\10. Semester\\ivis\\project\\parcoord-fx\\src\\data\\auto3.csv", ";", true);
-        
+
         setDataModelToGraph(dm);
     }
 }

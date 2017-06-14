@@ -19,7 +19,7 @@ public class Item {
     /**
      * unique index of item
      */
-    private int index;
+    private int index = -1;
 
     /**
      * ArrayList of all attributes
@@ -85,8 +85,7 @@ public class Item {
 
     // TODO: implement
     public Record convertToRecord() {
-        // TODO
-        return null;
+        return new Record(index, attributes);
     }
 
 }
