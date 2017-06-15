@@ -1,66 +1,97 @@
-/*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
- */
 package tugraz.ivis.parcoord.chart;
 
-import java.util.ArrayList;
+
+import javafx.collections.FXCollections;
+import javafx.collections.ObservableList;
+import javafx.scene.shape.Path;
+
+import java.util.List;
 
 /**
- * An item is a row in data set
- *
- * @author mchegini
+ * A single record
  */
-// TODO: remove Item and incorporate this into DataModel
 public class Record {
-    // TODO: think of more complex index handling (e.g. two indices with same values??)
     /**
-     * unique index of item
+     * TODO: calculate when adding
+     * the path for the record
+     */
+    private Path path;
+
+    /**
+     * index of the record
      */
     private int index = -1;
 
     /**
-     * ArrayList of all attributes
+     * values of the record
      */
-    private ArrayList<Object> attributes = new ArrayList<>();
+    private ObservableList<Object> values = FXCollections.observableArrayList();
 
-    public Record() {
+    /**
+     * categories of the record
+     */
+    private ObservableList<String> categories = FXCollections.observableArrayList();
+
+    /**
+     * simple constructor for a record
+     *
+     * @param index      unique index of the record
+     * @param values     values of the record
+     * @param categories categories of the record
+     */
+    public Record(int index, List<Object> values, List<String> categories) {
+        this(index, values);
+        this.categories.addAll(categories);
     }
 
-    public Record(ArrayList<Object> attributes) {
-        this.attributes = attributes;
-    }
-
-    public Record(int index, ArrayList<Object> attributes) {
+    /**
+     * simple constructor for a record
+     *
+     * @param index  unique index of the record
+     * @param values values of the record
+     */
+    public Record(int index, List<Object> values) {
         this.index = index;
-        this.attributes = attributes;
+        this.values.addAll(values);
+    }
+
+    public Object getAttByIndex(int index) {
+        return values.get(index);
+    }
+
+    public String getCatByIndex(int index) {
+        return categories.get(index);
     }
 
     public int getIndex() {
         return index;
     }
 
-    public ArrayList<Object> getAttributes() {
-        return attributes;
+    public ObservableList<String> getCategories() {
+        return categories;
     }
 
     public void setIndex(int index) {
         this.index = index;
     }
 
-    public void setAttributes(ArrayList<Object> attributes) {
-        this.attributes = attributes;
+    public ObservableList<Object> getValues() {
+        return values;
     }
 
-    @Override
-    public String toString() {
-        String result = "";
-        int nrOfAttributes = getAttributes().size();
-        for (int i = 0; i < nrOfAttributes; i++) {
-            result = result + " " + this.getAttributes().get(i);
-        }
-        return result;
+    public void setValues(ObservableList<Object> values) {
+        this.values = values;
     }
 
+    public void setCategories(ObservableList<String> categories) {
+        this.categories = categories;
+    }
+
+    public Path getPath() {
+        return path;
+    }
+
+    public void setPath(Path path) {
+        this.path = path;
+    }
 }

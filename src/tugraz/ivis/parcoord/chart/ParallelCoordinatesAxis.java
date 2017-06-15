@@ -33,14 +33,9 @@ public class ParallelCoordinatesAxis {
 	public NumberAxis getAxis() {
 		return axis;
 	}
-	private void setAxis(NumberAxis axis) {
-		this.axis = axis;
-	}
+
 	public boolean isInverted() {
 		return inverted;
-	}
-	private void setInverted(boolean inverted) {
-		this.inverted = inverted;
 	}
 	public int getAxisIndex() {
 		return axisIndex;

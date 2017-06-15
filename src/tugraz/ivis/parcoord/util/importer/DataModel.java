@@ -4,14 +4,16 @@
  */
 package tugraz.ivis.parcoord.util.importer;
 
+import javafx.collections.FXCollections;
+import javafx.collections.ObservableList;
+import tugraz.ivis.parcoord.chart.Record;
+
 import java.io.BufferedReader;
 import java.io.FileReader;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import javafx.collections.FXCollections;
-import javafx.collections.ObservableList;
 
 /**
  * FileModel stores the information in a .CSV file (High dimensional data set)
@@ -79,7 +81,7 @@ public final class DataModel {
      * Constructor for creating a new DataModel, e.g. new
      * DataModel(file.getAbsolutePath(), ";", true);
      *
-     * @param path the file path
+     * @param path      the file path
      * @param delimiter e.g. ; or :
      * @param normalize whether normalize (0-1) or not the points
      */
@@ -349,5 +351,16 @@ public final class DataModel {
      */
     public int getNumberAttributes() {
         return this.getDataHeader().size() - this.getNrOfCatDims();
+    }
+
+    /**
+     * @return an observable list of tugraz.ivis.parcoord.Record objects, converted from Item
+     */
+    public ObservableList<Record> getItemsAsRecords() {
+        ObservableList<Record> records = FXCollections.observableArrayList();
+        for (Item item : items) {
+            records.add(item.convertToRecord());
+        }
+        return records;
     }
 }
