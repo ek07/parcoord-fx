@@ -121,7 +121,6 @@ public class ParallelCoordinatesChart extends HighDimensionalChart {
         	}
             
             // filters
-        	// TODO disable moving high and low value at once by moving filter bar (as it's buggy)
         	RangeSlider vSlider = null;
         	if(useAxisFilters) {
         		
@@ -140,7 +139,11 @@ public class ParallelCoordinatesChart extends HighDimensionalChart {
 	        	// have to style after adding it (CSS wouldn't be accessible otherwise)
 	            vSlider.applyCss();
 	            vSlider.lookup(".range-slider .track").setStyle("-fx-opacity: 0;");
+	            // TODO fix range-bar gap
 	            vSlider.lookup(".range-slider .range-bar").setStyle("-fx-opacity: 0.15;");
+	            vSlider.lookup(".range-slider .range-bar").setDisable(true);
+	            vSlider.lookup(".range-slider .low-thumb").setStyle("-fx-shape: \"M150 0 L75 200 L225 200 Z\"; -fx-scale-y: 0.5; -fx-translate-y: 5; -fx-scale-x:1.3;");
+	            vSlider.lookup(".range-slider .high-thumb").setStyle("-fx-shape: \"M75 0 L225 0 L150 200 Z\"; -fx-scale-y: 0.5; -fx-translate-y: -5; -fx-scale-x:1.3;");
         	}
 
             ParallelCoordinatesAxis pcAxis = new ParallelCoordinatesAxis(numberAxis, iAxis, label, box, vSlider);
