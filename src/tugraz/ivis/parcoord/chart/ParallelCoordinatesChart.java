@@ -15,7 +15,6 @@ import javafx.geometry.Side;
 import javafx.scene.chart.NumberAxis;
 import javafx.scene.control.Label;
 import javafx.scene.layout.HBox;
-import javafx.scene.paint.Color;
 import javafx.scene.shape.LineTo;
 import javafx.scene.shape.MoveTo;
 import javafx.scene.shape.Path;
@@ -26,9 +25,10 @@ public class ParallelCoordinatesChart extends HighDimensionalChart {
     private List<String> axisLabels;
     private ArrayList<ParallelCoordinatesAxis> axes = new ArrayList<ParallelCoordinatesAxis>();
     private boolean useAxisFilters = true;
+    private double filteredOutOpacity = 0.0;
     
     private long lastFilterHandle = 0;
-    private final static long FILTER_FREQUENCY = 500; // handle filter changes every x milliseconds
+    private final static long FILTER_FREQUENCY = 100; // handle filter changes every x milliseconds
 
     /**
      * Default constructor needed for FXML
@@ -121,6 +121,7 @@ public class ParallelCoordinatesChart extends HighDimensionalChart {
         	}
             
             // filters
+        	// TODO disable moving high and low value at once by moving filter bar (as it's buggy)
         	RangeSlider vSlider = null;
         	if(useAxisFilters) {
         		
@@ -180,7 +181,7 @@ public class ParallelCoordinatesChart extends HighDimensionalChart {
 	 * @param isHighValue Indicates whether the changed value was a high value or low value
 	 */
 	private void handleFilterChange(int axisId, Number oldValue, Number newValue, boolean isHighValue) {
-
+		
 		// TODO replace this with an async solution (as this isn't working as intended)
 	    long systemTime = System.currentTimeMillis();
 	    if(systemTime - lastFilterHandle < FILTER_FREQUENCY) {
@@ -189,22 +190,26 @@ public class ParallelCoordinatesChart extends HighDimensionalChart {
 	    lastFilterHandle = systemTime;
 
 		ParallelCoordinatesAxis axis = getAxisById(axisId);
-
 		double newV = newValue.doubleValue();
 		double oldV = 0;
+
+		// sliders don't quite manage to reach extreme values
+		if(newV > 0.99)
+			newV = 1.0;
+		if(newV < 0.01)
+			newV = 0.0;
 		
 		if(isHighValue) {
 			oldV = axis.getFilterHigh();
 			axis.setFilterHigh(newV);
 			if (newV > oldV) {
 				// new lines could get active - we have to check all filters for the new lines
-				
-				// TODO iterate through all lines, if a new line would be added, check the line for all other filters as well
+				// iterate through all lines, if a new line would be added, check the line for all other filters as well
+				filterInLines(axisId, newV, true);
 			}
 			else {
 				// this can only diminish the number of visible lines
-				
-				// TODO iterate through all lines and simply set them invisible if required
+				filterOutLines(axisId, newV, true);
 			}
 		}
 		else {
@@ -212,18 +217,96 @@ public class ParallelCoordinatesChart extends HighDimensionalChart {
 			axis.setFilterLow(newV);
 			if(newV < oldV) {
 				// new lines could get active - we have to check all filters for the new lines
-				
-				// TODO iterate through all lines, if a new line would be added, check the line for all other filters as well
+				// iterate through all lines, if a new line would be added, check the line for all other filters as well
+				filterInLines(axisId, newV, false);
 			}
 			else {
 				// this can only diminish the number of visible lines
-				
-				// TODO iterate through all lines and simply set them invisible if required
-
+				// iterate through all lines and simply set them invisible if required
+				filterOutLines(axisId, newV, false);
 			}
 		}
 		
 	    System.out.println("Old: " + Double.toString(oldV) + "; New: " + Double.toString(newV));
+	}
+	
+	/**
+	 * Sets records to opaque if they have to be removed according to the filter criteria.
+	 * This method can only hide lines, not make them visible.
+	 * 
+	 * @param axisId		The index of the axis the filter is on
+	 * @param filterValue	The updated filter value
+	 * @param isHighValue	Whether the filter value is a high or low value
+	 */
+	private void filterOutLines(int axisId, double filterValue, boolean isHighValue) {
+		for(Series s : series) {
+			for(Record r : s.getRecords()) {
+				// TODO investigate why this is necessary
+				if(r.getValues().get(axisId) == null)
+					continue;
+				
+				// we could skip lines which are already hidden here, would probably just diminish performance though
+				
+				double recordValue = (double)r.getValues().get(axisId);
+				if(!isHighValue && recordValue < filterValue || isHighValue && recordValue > filterValue) {
+					r.setAxisFilterStatus(Record.Status.OPAQUE);
+					r.getPath().setOpacity(filteredOutOpacity);
+				}
+			}
+		}
+	}
+	
+	/**
+	 * Updates filter statuses and sets records visible if allowed by other criteria as well.
+	 * This method can only make lines visible, not hide them.
+	 * 
+	 * @param axisId		The index of the axis the filter is on
+	 * @param filterValue	The updated filter value
+	 * @param isHighValue	Whether the filter value is a high or low value
+	 */
+	private void filterInLines(int axisId, double filterValue, boolean isHighValue) {
+		for(Series s : series) {
+			for(Record r : s.getRecords()) {
+				// we can skip lines which are already visible (according to filter criteria)
+				if(r.getAxisFilterStatus() == Record.Status.VISIBLE)
+					continue;
+				
+				// TODO investigate why this is necessary
+				if(r.getValues().get(axisId) == null)
+					continue;
+				
+				double recordValue = (double)r.getValues().get(axisId);
+				if((isHighValue && (recordValue <= filterValue)) || (!isHighValue && (recordValue >= filterValue))) {
+					boolean visible = true;
+					
+					//check all axes
+					for(ParallelCoordinatesAxis pcAxis : axes) {
+						int id = pcAxis.getAxisIndex();
+						
+						// TODO investigate why this is necessary
+						if(r.getValues().get(id) == null)
+							continue;
+						
+						double recordValueAxis = (double)r.getValues().get(id);
+						//check for current axis
+						if(recordValueAxis > pcAxis.getFilterHigh() || recordValueAxis < pcAxis.getFilterLow()) {
+							visible = false;
+							break;
+						}
+					}
+					
+					if(visible) {
+						// we can now set it to visible according to filter criteria
+						r.setAxisFilterStatus(Record.Status.VISIBLE);
+						// still have to check for other stuff like brushing
+						if(r.isVisible()) {
+							r.getPath().setOpacity(s.getOpacity());
+							r.getPath().setStroke(s.getColor());
+						}
+					}
+				}
+			}
+		}
 	}
 	
 	/**
@@ -296,7 +379,7 @@ public class ParallelCoordinatesChart extends HighDimensionalChart {
             }
         }
 
-        return valueCount;
+        return valueCount - 1;
     }
 
     @Override
@@ -336,7 +419,8 @@ public class ParallelCoordinatesChart extends HighDimensionalChart {
                     path.getElements().add(lineTo);
                 }
             }
-            path.setStroke(new Color(0, 0, 0, 0.2));
+            path.setStroke(s.getColor());
+            path.setOpacity(s.getOpacity());
             record.setPath(path);
             getChartChildren().add(path);
         }

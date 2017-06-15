@@ -5,6 +5,7 @@ import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
 import javafx.scene.control.Alert;
 import javafx.scene.layout.AnchorPane;
+import javafx.scene.paint.Color;
 import javafx.stage.FileChooser;
 import javafx.stage.Stage;
 import tugraz.ivis.parcoord.chart.ParallelCoordinatesChart;
@@ -92,7 +93,7 @@ public class Controller implements Initializable {
     }
 
     public void setDataModelToGraph(DataModel dm) {
-        Series s = new Series(dm.getItemsAsRecords());
+        Series s = new Series(dm.getItemsAsRecords(), Color.BLACK, 0.2);
         parcoordChart.clear();
         parcoordChart.setAxisLabels(dm.getDataHeader());
         parcoordChart.addSeries(s);

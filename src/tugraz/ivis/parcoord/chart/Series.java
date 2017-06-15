@@ -2,6 +2,7 @@ package tugraz.ivis.parcoord.chart;
 
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
+import javafx.scene.paint.Color;
 
 import java.util.List;
 
@@ -14,6 +15,16 @@ public class Series {
      * name of the series
      */
     private String name = "?";
+    
+    /**
+     * The color of the series (BLACK default)
+     */
+    private Color color = Color.BLACK;
+    
+    /**
+     * The opacity for the series (0.2 default)
+     */
+    private double opacity = 0.2;
 
     /**
      * List of records in the series
@@ -28,6 +39,19 @@ public class Series {
 
     public Series(List<Record> records) {
         this.records.addAll(records);
+    }
+    
+    public Series(String name, List<Record> records, Color color, double opacity) {
+        this(name, records);
+        this.color = color;
+        this.opacity = opacity;
+
+    }
+
+    public Series(List<Record> records, Color color, double opacity) {
+        this(records);
+        this.color = color;
+        this.opacity = opacity;
     }
 
     public int getItemIndex(Record record) {
@@ -57,4 +81,21 @@ public class Series {
     public int getSeriesSize() {
         return records.size();
     }
+
+	public Color getColor() {
+		return color;
+	}
+
+	public void setColor(Color color) {
+		this.color = color;
+	}
+
+	public double getOpacity() {
+		return opacity;
+	}
+
+	public void setOpacity(double opacity) {
+		this.opacity = opacity;
+	}
+    
 }

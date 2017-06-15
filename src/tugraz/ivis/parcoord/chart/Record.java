@@ -11,6 +11,13 @@ import java.util.List;
  * A single record
  */
 public class Record {
+	
+	public enum Status {
+		VISIBLE,	// indicates that this record is visible
+		OPAQUE,		// indicates that this record is hidden
+		NONE		// indicates that no meaningful status can be applied (should be treated like VISIBLE for drawing)
+	}
+	
     /**
      * TODO: calculate when adding
      * the path for the record
@@ -21,6 +28,16 @@ public class Record {
      * index of the record
      */
     private int index = -1;
+    
+    /**
+     * indicates the current status of the record concerning axisFilters
+     */
+    private Status axisFilterStatus = Status.VISIBLE;
+    
+    /**
+     * indicates the current status of the record. Is NONE by default to show that no brushing has affected the record yet.
+     */
+    private Status brushingStatus = Status.NONE;
 
     /**
      * values of the record
@@ -53,6 +70,15 @@ public class Record {
     public Record(int index, List<Object> values) {
         this.index = index;
         this.values.addAll(values);
+    }
+    
+    /**
+     * Checks whether a record should be visible according to the statuses it has been assigned.
+     * 
+     * @return true if it should be visible, false otherwise
+     */
+    public boolean isVisible() {
+    	return !(axisFilterStatus == Status.OPAQUE || brushingStatus == Status.OPAQUE);
     }
 
     public Object getAttByIndex(int index) {
@@ -94,4 +120,22 @@ public class Record {
     public void setPath(Path path) {
         this.path = path;
     }
+
+	public Status getAxisFilterStatus() {
+		return axisFilterStatus;
+	}
+
+	public void setAxisFilterStatus(Status axisFilterStatus) {
+		this.axisFilterStatus = axisFilterStatus;
+	}
+
+	public Status getBrushingStatus() {
+		return brushingStatus;
+	}
+
+	public void setBrushingStatus(Status brushingStatus) {
+		this.brushingStatus = brushingStatus;
+	}
+    
+    
 }
