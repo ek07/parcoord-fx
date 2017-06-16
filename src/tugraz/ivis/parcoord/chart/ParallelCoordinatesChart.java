@@ -2,6 +2,8 @@ package tugraz.ivis.parcoord.chart;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 import org.controlsfx.control.RangeSlider;
 
@@ -9,12 +11,15 @@ import javafx.beans.binding.DoubleBinding;
 import javafx.beans.property.DoubleProperty;
 import javafx.beans.value.ChangeListener;
 import javafx.beans.value.ObservableValue;
+import javafx.event.EventHandler;
 import javafx.geometry.Orientation;
 import javafx.geometry.Pos;
 import javafx.geometry.Side;
 import javafx.scene.chart.NumberAxis;
 import javafx.scene.control.Label;
+import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.HBox;
+import javafx.scene.paint.Color;
 import javafx.scene.shape.LineTo;
 import javafx.scene.shape.MoveTo;
 import javafx.scene.shape.Path;
@@ -26,6 +31,15 @@ public class ParallelCoordinatesChart extends HighDimensionalChart {
     private ArrayList<ParallelCoordinatesAxis> axes = new ArrayList<ParallelCoordinatesAxis>();
     private boolean useAxisFilters = true;
     private double filteredOutOpacity = 0.0;
+    
+    private double pathStrokeWidth = 1.0;
+    
+    private double highlightOpacity = 1.0;
+    private Color highlightColor = Color.RED;
+    private double highlightStrokeWidth = 3.0;
+    
+    private ExecutorService highlightExecutor = Executors.newFixedThreadPool(1);
+    private ExecutorService filterExecutor = Executors.newFixedThreadPool(4);
     
     private long lastFilterHandle = 0;
     private final static long FILTER_FREQUENCY = 100; // handle filter changes every x milliseconds
@@ -161,16 +175,20 @@ public class ParallelCoordinatesChart extends HighDimensionalChart {
 		slider.highValueProperty().addListener(new ChangeListener<Number>() {
 			@Override
 			public void changed(ObservableValue<? extends Number> ov, Number oldVal, Number newVal) {
-				int axisId = (int)slider.getProperties().get("axis");
-				handleFilterChange(axisId, oldVal, newVal, true);
+				filterExecutor.submit(() -> {
+					int axisId = (int)slider.getProperties().get("axis");
+					handleFilterChange(axisId, oldVal, newVal, true);
+				});
 			}
 		});
 		
 		slider.lowValueProperty().addListener(new ChangeListener<Number>() {
 			@Override
 			public void changed(ObservableValue<? extends Number> ov, Number oldVal, Number newVal) {
-				int axisId = (int)slider.getProperties().get("axis");
-				handleFilterChange(axisId, oldVal, newVal, false);
+				filterExecutor.submit(() -> {
+					int axisId = (int)slider.getProperties().get("axis");
+					handleFilterChange(axisId, oldVal, newVal, false);
+				});
 			}
 		});
 	}
@@ -382,6 +400,7 @@ public class ParallelCoordinatesChart extends HighDimensionalChart {
             }
         }
 
+        //TODO remove -1 after categorial data has been handled
         return valueCount - 1;
     }
 
@@ -424,8 +443,60 @@ public class ParallelCoordinatesChart extends HighDimensionalChart {
             }
             path.setStroke(s.getColor());
             path.setOpacity(s.getOpacity());
+            path.setStrokeWidth(pathStrokeWidth);
+            path.getProperties().put("record", record);
+            
+            setupPathMouseEvents(path);
+            
             record.setPath(path);
             getChartChildren().add(path);
         }
     }
+    
+    /**
+     * Sets up event handling for the given path.
+     * 
+     * @param path The path for which events should be handled
+     */
+    private void setupPathMouseEvents(Path path) {
+        
+        path.setOnMouseEntered(new EventHandler<MouseEvent>() {
+
+			@Override
+			public void handle(MouseEvent event) {
+				highlightExecutor.submit(() -> {
+
+					Path src = (Path)event.getSource();
+					Record record = (Record)src.getProperties().get("record");
+					
+					if(record.isVisible()) {
+						src.setOpacity(highlightOpacity);
+						src.setStroke(highlightColor);
+						src.setStrokeWidth(highlightStrokeWidth);
+						src.toFront();
+					}
+				});
+			}
+        	
+        });
+
+		path.setOnMouseExited(new EventHandler<MouseEvent>() {
+
+			@Override
+			public void handle(MouseEvent event) {
+				highlightExecutor.submit(() -> {
+					Path src = (Path) event.getSource();
+					Record record = (Record) src.getProperties().get("record");
+
+					if (record.isVisible()) {
+						src.setOpacity(record.getSeries().getOpacity());
+						src.setStroke(record.getSeries().getColor());
+						src.setStrokeWidth(pathStrokeWidth);
+						src.toBack();
+					}
+
+				});
+			}
+		});
+	}
 }

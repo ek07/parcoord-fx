@@ -39,6 +39,9 @@ public class Series {
 
     public Series(List<Record> records) {
         this.records.addAll(records);
+        for(Record record : this.records) {
+        	record.setSeries(this);
+        }
     }
     
     public Series(String name, List<Record> records, Color color, double opacity) {
@@ -74,9 +77,9 @@ public class Series {
         this.name = name;
     }
 
-    public void setRecords(ObservableList<Record> records) {
-        this.records = records;
-    }
+//    public void setRecords(ObservableList<Record> records) {
+//        this.records = records;
+//    }
 
     public int getSeriesSize() {
         return records.size();

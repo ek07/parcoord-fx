@@ -48,6 +48,11 @@ public class Record {
      * categories of the record
      */
     private ObservableList<String> categories = FXCollections.observableArrayList();
+    
+    /**
+     * the series this record belongs to
+     */
+    private Series series;
 
     /**
      * simple constructor for a record
@@ -136,6 +141,15 @@ public class Record {
 	public void setBrushingStatus(Status brushingStatus) {
 		this.brushingStatus = brushingStatus;
 	}
+
+	public Series getSeries() {
+		return series;
+	}
+
+	public void setSeries(Series series) {
+		this.series = series;
+	}
     
+	
     
 }
