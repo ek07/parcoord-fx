@@ -12,6 +12,7 @@ import javafx.beans.property.DoubleProperty;
 import javafx.beans.value.ChangeListener;
 import javafx.beans.value.ObservableValue;
 import javafx.event.EventHandler;
+import javafx.geometry.Bounds;
 import javafx.geometry.Orientation;
 import javafx.geometry.Pos;
 import javafx.geometry.Side;
@@ -23,6 +24,8 @@ import javafx.scene.paint.Color;
 import javafx.scene.shape.LineTo;
 import javafx.scene.shape.MoveTo;
 import javafx.scene.shape.Path;
+import javafx.scene.shape.PathElement;
+import javafx.scene.shape.Rectangle;
 import tugraz.ivis.parcoord.chart.Record.Status;
 
 // TODO: implement basic graph here
@@ -40,8 +43,14 @@ public class ParallelCoordinatesChart extends HighDimensionalChart {
     private Color highlightColor = Color.RED;
     private double highlightStrokeWidth = 3.0;
     
+    private boolean useBrushing = true;
+    private Rectangle brushingRectangle;
+    private double brushingRectangleX = 0.0;
+    private double brushingRectangleY = 0.0;
+    
     private ExecutorService highlightExecutor = Executors.newFixedThreadPool(1);
     private ExecutorService filterExecutor = Executors.newFixedThreadPool(4);
+    private ExecutorService brushingExecutor = Executors.newFixedThreadPool(1);
     
     private long lastFilterHandle = 0;
     private final static long FILTER_FREQUENCY = 100; // handle filter changes every x milliseconds
@@ -109,7 +118,6 @@ public class ParallelCoordinatesChart extends HighDimensionalChart {
 
             DoubleBinding trueAxisSeparation = getAxisSeparationBinding().multiply(iAxis + 1);
 
-            // TODO  use real bounds
             double upperBound = minMax.get(iAxis).getMaximum();
             double lowerBound = minMax.get(iAxis).getMinimum();
             double delta = Math.abs(upperBound - lowerBound);
@@ -544,4 +552,84 @@ public class ParallelCoordinatesChart extends HighDimensionalChart {
 			}
 		});
 	}
+    
+    /**
+     * Enables brushing for this chart.
+     */
+    public void enableBrushing() {
+    	useBrushing = true;
+    	initializeBrushingRectangle();
+    	
+    	setOnMousePressed((MouseEvent event) -> {
+    		//reset the rectangle
+    		brushingRectangle.setWidth(0.0);
+    		brushingRectangle.setHeight(0.0);
+    		brushingRectangle.setVisible(true);
+    		
+    		brushingRectangleX = event.getX();
+    		brushingRectangleY = event.getY();
+    		
+    		brushingRectangle.setX(brushingRectangleX);
+    		brushingRectangle.setY(brushingRectangleY);
+    		
+    	});
+    	
+		setOnMouseDragged((MouseEvent event) -> {
+			brushingRectangle.setWidth(event.getX() - brushingRectangleX);
+			brushingRectangle.setHeight(event.getY() - brushingRectangleY);
+
+			if (brushingRectangle.getWidth() < 0) {
+				brushingRectangle.setWidth(-brushingRectangle.getWidth());
+				brushingRectangle.setX(brushingRectangleX - brushingRectangle.getWidth());
+				
+			}
+
+			if (brushingRectangle.getHeight() < 0) {
+				brushingRectangle.setHeight(-brushingRectangle.getHeight());
+				brushingRectangle.setY(brushingRectangleY - brushingRectangle.getHeight());
+			}
+		});
+    	
+    	setOnMouseReleased((MouseEvent event) -> {
+    		brushingRectangle.setVisible(false);
+    		System.out.println(brushingRectangle.toString());
+    		
+    		//dismiss small rectangles
+    		if(brushingRectangle.getWidth() < 10.0 && brushingRectangle.getHeight() < 10.0)
+    			return;
+    		
+    		//handle brushing
+    		brushingExecutor.submit(() -> handleBrushing());
+    	});
+    }
+    
+    /**
+     * Creates and styles the rectangle which is used for brushing.
+     */
+    private void initializeBrushingRectangle() {
+    	brushingRectangle = new Rectangle(0,0,0,0);
+    	brushingRectangle.setVisible(false);
+    	brushingRectangle.setFill(Color.BLUE);
+    	brushingRectangle.setOpacity(0.1);
+    	getChildren().add(brushingRectangle);
+    }
+    
+    private void handleBrushing() {
+    	
+    	Bounds brushingBounds = brushingRectangle.getBoundsInLocal();
+    	System.out.println(brushingBounds.toString());
+    	
+    	for(Series s : series) {
+    		for(Record r : s.getRecords()) {
+    			if(r.getPath().getBoundsInParent().intersects(brushingBounds)) {
+    				//collision detected
+    				r.getPath().setStroke(Color.RED);
+    			}
+    		}
+    	}
+    }
+    
+    public void resetBrushing() {
+    	
+    }
 }

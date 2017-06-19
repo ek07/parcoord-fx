@@ -75,6 +75,8 @@ public class Controller implements Initializable {
             dm.printDataSet();
             setDataModelToGraph(dm);
         }
+        
+        parcoordChart.enableBrushing();
     }
 
     private void showErrorDialog(String headerText, String contentText) {
