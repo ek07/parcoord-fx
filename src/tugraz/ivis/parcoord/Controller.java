@@ -1,5 +1,9 @@
 package tugraz.ivis.parcoord;
 
+import java.io.File;
+import java.net.URL;
+import java.util.ResourceBundle;
+
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
@@ -11,10 +15,6 @@ import javafx.stage.Stage;
 import tugraz.ivis.parcoord.chart.ParallelCoordinatesChart;
 import tugraz.ivis.parcoord.chart.Series;
 import tugraz.ivis.parcoord.util.importer.DataModel;
-
-import java.io.File;
-import java.net.URL;
-import java.util.ResourceBundle;
 
 // FXML interaction goes here
 public class Controller implements Initializable {
@@ -95,6 +95,7 @@ public class Controller implements Initializable {
     public void setDataModelToGraph(DataModel dm) {
         Series s = new Series(dm.getItemsAsRecords(), Color.BLACK, 0.2);
         parcoordChart.clear();
+        parcoordChart.setMinMaxValuesFromArray(dm.getMinMaxValues());
         parcoordChart.setAxisLabels(dm.getDataHeader());
         parcoordChart.addSeries(s);
     }

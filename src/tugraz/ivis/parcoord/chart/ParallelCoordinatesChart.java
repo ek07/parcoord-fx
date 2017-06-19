@@ -86,7 +86,6 @@ public class ParallelCoordinatesChart extends HighDimensionalChart {
     /**
      * Creates and binds axes, axes labels and filters.
      */
-
     protected void bindAxes() {
         int numAxes = getAttributeCount();
 
@@ -94,6 +93,8 @@ public class ParallelCoordinatesChart extends HighDimensionalChart {
         double spaceBetweenTicks = 50;
         double labelMinWidth = 500;
         double labelYOffset = 0;
+        
+        List<MinMaxPair> minMax = getMinMaxValues();
 
         for (int iAxis = 0; iAxis < numAxes; iAxis++) {
 
@@ -109,8 +110,8 @@ public class ParallelCoordinatesChart extends HighDimensionalChart {
             DoubleBinding trueAxisSeparation = getAxisSeparationBinding().multiply(iAxis + 1);
 
             // TODO  use real bounds
-            double upperBound = 10.0;
-            double lowerBound = 0.0;
+            double upperBound = minMax.get(iAxis).getMaximum();
+            double lowerBound = minMax.get(iAxis).getMinimum();
             double delta = Math.abs(upperBound - lowerBound);
             
             // axis
