@@ -12,7 +12,6 @@ import javafx.beans.property.DoubleProperty;
 import javafx.beans.value.ChangeListener;
 import javafx.beans.value.ObservableValue;
 import javafx.event.EventHandler;
-import javafx.geometry.Bounds;
 import javafx.geometry.Orientation;
 import javafx.geometry.Pos;
 import javafx.geometry.Side;
@@ -21,7 +20,6 @@ import javafx.scene.control.Label;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.HBox;
 import javafx.scene.paint.Color;
-import javafx.scene.shape.Line;
 import javafx.scene.shape.LineTo;
 import javafx.scene.shape.MoveTo;
 import javafx.scene.shape.Path;
@@ -44,7 +42,6 @@ public class ParallelCoordinatesChart extends HighDimensionalChart {
     private Color highlightColor = Color.RED;
     private double highlightStrokeWidth = 3.0;
     
-    private boolean useBrushing = true;
     private Rectangle brushingRectangle;
     private double brushingRectangleX = 0.0;
     private double brushingRectangleY = 0.0;
@@ -552,20 +549,12 @@ public class ParallelCoordinatesChart extends HighDimensionalChart {
 				});
 			}
 		});
-		
-		path.setOnMouseDragged(new EventHandler<MouseEvent>() {
-			@Override
-			public void handle(MouseEvent event) {
-				System.out.println("yolo");
-			}
-		});
 	}
     
     /**
      * Enables brushing for this chart by setting up corresponding Mouse events.
      */
     public void enableBrushing() {
-    	useBrushing = true;
     	initializeBrushingRectangle();
     	
     	setOnMousePressed((MouseEvent event) -> {
