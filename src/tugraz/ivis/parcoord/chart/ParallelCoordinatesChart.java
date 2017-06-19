@@ -562,7 +562,7 @@ public class ParallelCoordinatesChart extends HighDimensionalChart {
 	}
     
     /**
-     * Enables brushing for this chart.
+     * Enables brushing for this chart by setting up corresponding Mouse events.
      */
     public void enableBrushing() {
     	useBrushing = true;
@@ -589,7 +589,6 @@ public class ParallelCoordinatesChart extends HighDimensionalChart {
 			if (brushingRectangle.getWidth() < 0) {
 				brushingRectangle.setWidth(-brushingRectangle.getWidth());
 				brushingRectangle.setX(brushingRectangleX - brushingRectangle.getWidth());
-				
 			}
 
 			if (brushingRectangle.getHeight() < 0) {
@@ -627,10 +626,10 @@ public class ParallelCoordinatesChart extends HighDimensionalChart {
     	getChildren().add(brushingRectangle);
     }
     
-    private void handleBrushing() {
-    	
-    	Bounds brushingBounds = brushingRectangle.getBoundsInParent();
-    	
+    /**
+     * Handles brushing given that the brushingRectangle is present and set correctly.
+     */
+    private void handleBrushing() {    	
     	for(Series s : series) {
     		for(Record r : s.getRecords()) {
     			//skip lines which are not visible
@@ -650,6 +649,9 @@ public class ParallelCoordinatesChart extends HighDimensionalChart {
     	}
     }
     
+    /**
+     * Resets all changes made by brushing.
+     */
     public void resetBrushing() {
     	if(series == null)
     		return;
