@@ -35,9 +35,14 @@ public class Record {
     private Status axisFilterStatus = Status.VISIBLE;
     
     /**
-     * indicates the current status of the record. Is NONE by default to show that no brushing has affected the record yet.
+     * indicates the current status of the record (concerning brushing). Is NONE by default to show that no brushing has affected the record yet.
      */
     private Status brushingStatus = Status.NONE;
+    
+    /**
+     * indicates the current status of the record (concerning highlighting). Is NONE by default to show that no brushing has affected the record yet.
+     */
+    private Status highlightingStatus = Status.NONE;
 
     /**
      * values of the record
@@ -84,6 +89,10 @@ public class Record {
      */
     public boolean isVisible() {
     	return !(axisFilterStatus == Status.OPAQUE || brushingStatus == Status.OPAQUE);
+    }
+    
+    public boolean isHighlightedOrBrushed() {
+    	return brushingStatus == Status.VISIBLE || highlightingStatus == Status.VISIBLE;
     }
 
     public Object getAttByIndex(int index) {
@@ -148,6 +157,14 @@ public class Record {
 
 	public void setSeries(Series series) {
 		this.series = series;
+	}
+
+	public Status getHighlightingStatus() {
+		return highlightingStatus;
+	}
+
+	public void setHighlightingStatus(Status highlightingStatus) {
+		this.highlightingStatus = highlightingStatus;
 	}
     
 	

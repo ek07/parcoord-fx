@@ -23,6 +23,7 @@ import javafx.scene.paint.Color;
 import javafx.scene.shape.LineTo;
 import javafx.scene.shape.MoveTo;
 import javafx.scene.shape.Path;
+import tugraz.ivis.parcoord.chart.Record.Status;
 
 // TODO: implement basic graph here
 // TODO: this is basically only a bit of "playing around" for now
@@ -268,11 +269,17 @@ public class ParallelCoordinatesChart extends HighDimensionalChart {
 					continue;
 				
 				// we could skip lines which are already hidden here, would probably just diminish performance though
+				if(!r.isVisible())
+					continue;
 				
 				double recordValue = (double)r.getValues().get(axisId);
 				if(!isHighValue && recordValue < filterValue || isHighValue && recordValue > filterValue) {
 					r.setAxisFilterStatus(Record.Status.OPAQUE);
 					r.getPath().setOpacity(filteredOutOpacity);
+					
+					//remove other statuses
+					r.setBrushingStatus(Status.NONE);
+					r.setHighlightingStatus(Status.NONE);
 				}
 			}
 		}
@@ -324,6 +331,8 @@ public class ParallelCoordinatesChart extends HighDimensionalChart {
 						if(r.isVisible()) {
 							r.getPath().setOpacity(s.getOpacity());
 							r.getPath().setStroke(s.getColor());
+							// to reset brushing / highlighting effects
+							r.getPath().setStrokeWidth(pathStrokeWidth);
 						}
 					}
 				}
@@ -462,6 +471,40 @@ public class ParallelCoordinatesChart extends HighDimensionalChart {
      */
     private void setupHighlightingEvents(Path path) {
         
+    	// permanent highlighting for clicks
+        path.setOnMouseClicked(new EventHandler<MouseEvent>() {
+
+			@Override
+			public void handle(MouseEvent event) {
+				Path src = (Path) event.getSource();
+				Record record = (Record) src.getProperties().get("record");
+
+				// we don't need to handle events for invisible records
+				if (record.isVisible()) {
+					double newOpacity = highlightOpacity;
+					Color newColor = highlightColor;
+					double newStrokeWidth = highlightStrokeWidth;
+
+					// record is already highlighted
+					if (record.getHighlightingStatus() == Status.VISIBLE) {
+						newOpacity = record.getSeries().getOpacity();
+						newColor = record.getSeries().getColor();
+						newStrokeWidth = pathStrokeWidth;
+						record.setHighlightingStatus(Status.NONE);
+					} else {
+						record.setHighlightingStatus(Status.VISIBLE);
+					}
+
+					src.setOpacity(newOpacity);
+					src.setStroke(newColor);
+					src.setStrokeWidth(newStrokeWidth);
+					src.toFront();
+				}
+			}
+        });
+        
+        
+        //temporal highlighting for hover
         path.setOnMouseEntered(new EventHandler<MouseEvent>() {
 
 			@Override
@@ -475,7 +518,6 @@ public class ParallelCoordinatesChart extends HighDimensionalChart {
 						src.setOpacity(highlightOpacity);
 						src.setStroke(highlightColor);
 						src.setStrokeWidth(highlightStrokeWidth);
-						src.toFront();
 					}
 				});
 			}
@@ -490,11 +532,11 @@ public class ParallelCoordinatesChart extends HighDimensionalChart {
 					Path src = (Path) event.getSource();
 					Record record = (Record) src.getProperties().get("record");
 
-					if (record.isVisible()) {
+					// we don't want to revert records to normal if they are highlighted
+					if (record.isVisible() && !(record.getHighlightingStatus() == Status.VISIBLE)) {
 						src.setOpacity(record.getSeries().getOpacity());
 						src.setStroke(record.getSeries().getColor());
 						src.setStrokeWidth(pathStrokeWidth);
-						src.toBack();
 					}
 
 				});
