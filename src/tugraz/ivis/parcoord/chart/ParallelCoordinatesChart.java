@@ -257,7 +257,7 @@ public class ParallelCoordinatesChart extends HighDimensionalChart {
 			}
 		}
 		
-	    System.out.println("Old: " + Double.toString(oldV) + "; New: " + Double.toString(newV));
+	    //System.out.println("Old: " + Double.toString(oldV) + "; New: " + Double.toString(newV));
 	}
 	
 	/**
@@ -427,29 +427,39 @@ public class ParallelCoordinatesChart extends HighDimensionalChart {
         resizeAxes();
     }
 
+    /**
+	 * Binds a given series to the chart content, and adds it to its chartChildren
+	 *
+     * @param s the series which the chart adds and binds to its content
+     */
     @Override
     protected void bindSeries(Series s) {
         DoubleBinding axisSeparation = getAxisSeparationBinding();
         DoubleProperty heightProp = innerHeightProperty();
-
+		Double value;
+		Object dataPoint;
         //int numRecords = s.getRecords().size();
         int numColumns = getAttributeCount();
         //System.out.println("cols:" + numColumns + "records" + numRecords);
         for (Record record : s.getRecords()) {
             Path path = new Path();
             MoveTo moveTo = new MoveTo();
-            moveTo.xProperty().bind(axisSeparation);
-            moveTo.yProperty().bind(heightProp.divide(2.0).subtract(top));
-
+			dataPoint = record.getAttByIndex(0);
+			value = (Double) dataPoint;
+			// for first data point, use moveto not lineto
+			// this has to be refactored when moving axes
+			moveTo.xProperty().bind(axisSeparation);
+            moveTo.yProperty().bind(heightProp.subtract(heightProp.multiply(value)));
             path.getElements().add(moveTo);
-            for (int column = 0; column < numColumns; column++) {
-                Object dataPoint = record.getAttByIndex(column);
+            
+            for (int column = 1; column < numColumns; column++) {
+				dataPoint = record.getAttByIndex(column);
 
                 if (dataPoint instanceof String) {
                     break;
                 }
 
-                Double value = (Double) dataPoint;
+				value = (Double) dataPoint;
                 //System.out.println("data at " + record + ", col:" + column + ";" + "dataPoint" + value);
                 if (value != null) {
                     LineTo lineTo = new LineTo();
