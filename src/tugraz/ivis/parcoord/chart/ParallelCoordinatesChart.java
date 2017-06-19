@@ -34,6 +34,7 @@ public class ParallelCoordinatesChart extends HighDimensionalChart {
     
     private double pathStrokeWidth = 1.0;
     
+    private boolean useHighlighting = true;
     private double highlightOpacity = 1.0;
     private Color highlightColor = Color.RED;
     private double highlightStrokeWidth = 3.0;
@@ -446,7 +447,8 @@ public class ParallelCoordinatesChart extends HighDimensionalChart {
             path.setStrokeWidth(pathStrokeWidth);
             path.getProperties().put("record", record);
             
-            setupPathMouseEvents(path);
+            if(useHighlighting)
+            	setupHighlightingEvents(path);
             
             record.setPath(path);
             getChartChildren().add(path);
@@ -458,7 +460,7 @@ public class ParallelCoordinatesChart extends HighDimensionalChart {
      * 
      * @param path The path for which events should be handled
      */
-    private void setupPathMouseEvents(Path path) {
+    private void setupHighlightingEvents(Path path) {
         
         path.setOnMouseEntered(new EventHandler<MouseEvent>() {
 
