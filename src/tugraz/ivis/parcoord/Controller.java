@@ -58,6 +58,12 @@ public class Controller implements Initializable {
                 "'Information Visualisation'\nat Graz University of Technology by:" +
                 "\n  Thomas Absenger\n  Mohammad Chegini\n  Thorsten Ruprechter\n  Helmut Zöhrer");
     }
+    
+    @FXML
+    public void onResetBrushing(ActionEvent actionEvent) {
+    	if(parcoordChart != null)
+    		parcoordChart.resetBrushing();
+    }
 
     private void importDataFromFile(String absolutePath) {
         // just print for testing for now

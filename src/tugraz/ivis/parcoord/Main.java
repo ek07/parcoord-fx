@@ -15,6 +15,8 @@ public class Main extends Application {
         primaryStage.setTitle("Parallel Coordinates Test");
         Scene scene = new Scene(root);
         primaryStage.setScene(scene);
+        //scene.addEventFilter(MouseEvent.ANY, e -> System.out.println( e));
+
 
         Controller controller = loader.getController();
         controller.setStage(primaryStage);

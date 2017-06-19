@@ -21,11 +21,12 @@ import javafx.scene.control.Label;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.HBox;
 import javafx.scene.paint.Color;
+import javafx.scene.shape.Line;
 import javafx.scene.shape.LineTo;
 import javafx.scene.shape.MoveTo;
 import javafx.scene.shape.Path;
-import javafx.scene.shape.PathElement;
 import javafx.scene.shape.Rectangle;
+import javafx.scene.shape.Shape;
 import tugraz.ivis.parcoord.chart.Record.Status;
 
 // TODO: implement basic graph here
@@ -463,7 +464,7 @@ public class ParallelCoordinatesChart extends HighDimensionalChart {
             path.setStroke(s.getColor());
             path.setOpacity(s.getOpacity());
             path.setStrokeWidth(pathStrokeWidth);
-            path.getProperties().put("record", record);
+            path.getProperties().put("record", record);            
             
             if(useHighlighting)
             	setupHighlightingEvents(path);
@@ -551,6 +552,13 @@ public class ParallelCoordinatesChart extends HighDimensionalChart {
 				});
 			}
 		});
+		
+		path.setOnMouseDragged(new EventHandler<MouseEvent>() {
+			@Override
+			public void handle(MouseEvent event) {
+				System.out.println("yolo");
+			}
+		});
 	}
     
     /**
@@ -588,14 +596,19 @@ public class ParallelCoordinatesChart extends HighDimensionalChart {
 				brushingRectangle.setHeight(-brushingRectangle.getHeight());
 				brushingRectangle.setY(brushingRectangleY - brushingRectangle.getHeight());
 			}
+			
+			//doesn't work as it doesn't catch every intersection
+//			if(event.getPickResult().getIntersectedNode() instanceof Path) {
+//				Path path = (Path)event.getPickResult().getIntersectedNode();
+//				path.setStroke(Color.RED);
+//			}
 		});
     	
     	setOnMouseReleased((MouseEvent event) -> {
     		brushingRectangle.setVisible(false);
-    		System.out.println(brushingRectangle.toString());
     		
     		//dismiss small rectangles
-    		if(brushingRectangle.getWidth() < 10.0 && brushingRectangle.getHeight() < 10.0)
+    		if(brushingRectangle.getWidth() < 7.5 && brushingRectangle.getHeight() < 7.5)
     			return;
     		
     		//handle brushing
@@ -616,20 +629,40 @@ public class ParallelCoordinatesChart extends HighDimensionalChart {
     
     private void handleBrushing() {
     	
-    	Bounds brushingBounds = brushingRectangle.getBoundsInLocal();
-    	System.out.println(brushingBounds.toString());
+    	Bounds brushingBounds = brushingRectangle.getBoundsInParent();
     	
     	for(Series s : series) {
     		for(Record r : s.getRecords()) {
-    			if(r.getPath().getBoundsInParent().intersects(brushingBounds)) {
+    			//skip lines which are not visible
+    			if(!r.isVisible())
+    				continue;
+    			
+    			Shape intersection = Shape.intersect(r.getPath(), brushingRectangle);
+    			if(intersection.getBoundsInParent().intersects(getBoundsInLocal())) {
     				//collision detected
-    				r.getPath().setStroke(Color.RED);
+    				r.setBrushingStatus(Status.VISIBLE);
+    			}
+    			else {
+    				r.setBrushingStatus(Status.OPAQUE);
+    				r.getPath().setOpacity(filteredOutOpacity);
     			}
     		}
     	}
     }
     
     public void resetBrushing() {
+    	if(series == null)
+    		return;
     	
+    	for(Series s : series) {
+    		for(Record r : s.getRecords()) {
+    			r.setBrushingStatus(Status.NONE);
+    			if(r.isVisible()) {
+    				r.getPath().setStroke(s.getColor());
+    				r.getPath().setOpacity(s.getOpacity());
+    				r.getPath().setStrokeWidth(pathStrokeWidth);
+    			}
+    		}
+    	}
     }
 }
