@@ -1,14 +1,5 @@
 package tugraz.ivis.parcoord.chart;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-
-import javafx.scene.control.Button;
-import javafx.scene.layout.*;
-import org.controlsfx.control.RangeSlider;
-
 import javafx.beans.binding.DoubleBinding;
 import javafx.beans.property.DoubleProperty;
 import javafx.beans.value.ChangeListener;
@@ -18,40 +9,46 @@ import javafx.geometry.Pos;
 import javafx.geometry.Side;
 import javafx.scene.CacheHint;
 import javafx.scene.chart.NumberAxis;
+import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.input.MouseEvent;
+import javafx.scene.layout.HBox;
+import javafx.scene.layout.Pane;
 import javafx.scene.paint.Color;
-import javafx.scene.shape.LineTo;
-import javafx.scene.shape.MoveTo;
-import javafx.scene.shape.Path;
-import javafx.scene.shape.Rectangle;
-import javafx.scene.shape.Shape;
+import javafx.scene.shape.*;
+import org.controlsfx.control.RangeSlider;
 import tugraz.ivis.parcoord.chart.Record.Status;
+
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 // TODO: implement basic graph here
 // TODO: this is basically only a bit of "playing around" for now
 public class ParallelCoordinatesChart extends HighDimensionalChart {
-	private static final double BUTTON_MARGIN = 5.0;
-	private List<String> axisLabels;
-    private ArrayList<ParallelCoordinatesAxis> axes = new ArrayList<ParallelCoordinatesAxis>();
+    private static final double BUTTON_MARGIN = 5.0;
+    private List<String> axisLabels;
+    private Map<Integer, ParallelCoordinatesAxis> axes = new HashMap<>();
     private boolean useAxisFilters = true;
     private double filteredOutOpacity = 0.0;
-    
+
     private double pathStrokeWidth = 1.0;
-    
+
     private boolean useHighlighting = true;
     private double highlightOpacity = 1.0;
     private Color highlightColor = Color.RED;
     private double highlightStrokeWidth = 3.0;
-    
+
     private Rectangle brushingRectangle;
     private double brushingRectangleX = 0.0;
     private double brushingRectangleY = 0.0;
-    
+
     private ExecutorService highlightExecutor = Executors.newFixedThreadPool(1);
     private ExecutorService filterExecutor = Executors.newFixedThreadPool(4);
     private ExecutorService brushingExecutor = Executors.newFixedThreadPool(1);
-    
+
     private long lastFilterHandle = 0;
     private final static long FILTER_FREQUENCY = 100; // handle filter changes every x milliseconds
 
@@ -76,20 +73,20 @@ public class ParallelCoordinatesChart extends HighDimensionalChart {
     @Override
     public void clear() {
         super.clear();
-        if(axisLabels != null)
-        	axisLabels.clear();
-        if(axes != null)
-        	axes.clear();
+        if (axisLabels != null)
+            axisLabels.clear();
+        if (axes != null)
+            axes.clear();
     }
-    
+
     /**
      * Reorders elements in the z dimensions to push certain elements to the front.
      */
     protected void reorder() {
-    	for(ParallelCoordinatesAxis axis : axes) {
-    		if(axis.getFilterSlider() != null)
-    			axis.getFilterSlider().toFront();
-    	}
+        for (ParallelCoordinatesAxis axis : axes.values()) {
+            if (axis.getFilterSlider() != null)
+                axis.getFilterSlider().toFront();
+        }
     }
 
     /**
@@ -102,10 +99,10 @@ public class ParallelCoordinatesChart extends HighDimensionalChart {
         double spaceBetweenTicks = 50;
         double labelMinWidth = 500;
         double labelYOffset = 0;
-        
+
         List<MinMaxPair> minMax = getMinMaxValues();
         Pane buttonPane = new Pane();
-		getChartChildren().add(buttonPane);
+        getChartChildren().add(buttonPane);
 
         for (int iAxis = 0; iAxis < numAxes; iAxis++) {
 
@@ -124,12 +121,12 @@ public class ParallelCoordinatesChart extends HighDimensionalChart {
             double lowerBound = minMax.get(iAxis).getMinimum();
             double delta = Math.abs(upperBound - lowerBound);
 
-			// Button
-			Button button = new Button("I");
-			buttonPane.getChildren().add(button); // column=3 row=1
-			button.translateXProperty().bind(trueAxisSeparation.subtract(button.widthProperty().divide(2)));
+            // Button
+            Button button = new Button("I");
+            button.translateXProperty().bind(trueAxisSeparation.subtract(button.widthProperty().divide(2)));
+            buttonPane.getChildren().add(button);
 
-			// axis
+            // axis
             NumberAxis numberAxis = new NumberAxis(null, lowerBound, upperBound, 1.0);
             numberAxis.setSide(Side.LEFT);
             numberAxis.setMinorTickVisible(false);
@@ -138,242 +135,240 @@ public class ParallelCoordinatesChart extends HighDimensionalChart {
             numberAxis.translateYProperty().bind(button.heightProperty().add(BUTTON_MARGIN));
             numberAxis.tickUnitProperty().bind(innerHeightProperty.divide(innerHeightProperty).divide(innerHeightProperty).multiply(spaceBetweenTicks).multiply(delta));
 
-        	getChartChildren().add(numberAxis);
+            getChartChildren().add(numberAxis);
 
-			// label
-        	HBox box = null;
-        	if(showLabels) {
-	            Label labelNode = new Label(label);
-	            labelNode.setMinWidth(labelMinWidth);
-	            labelNode.setAlignment(Pos.CENTER);
-	            box = new HBox(labelNode);
-	            box.translateXProperty().bind(trueAxisSeparation.subtract(labelMinWidth / 2));
-	            box.translateYProperty().bind(innerHeightProperty.subtract(labelYOffset));
-	            
-	        	getChartChildren().add(box);
-        	}
-            
+            // label
+            HBox box = null;
+            if (showLabels) {
+                Label labelNode = new Label(label);
+                labelNode.setMinWidth(labelMinWidth);
+                labelNode.setAlignment(Pos.CENTER);
+                box = new HBox(labelNode);
+                box.translateXProperty().bind(trueAxisSeparation.subtract(labelMinWidth / 2));
+                box.translateYProperty().bind(innerHeightProperty.subtract(labelYOffset));
+
+                getChartChildren().add(box);
+            }
+
             // filters
-        	RangeSlider vSlider = null;
-        	if(useAxisFilters) {
-        		
-        		// using bounds from 1.0 to 0.0 should work as we draw in this space anyway
-	            vSlider = new RangeSlider(0.0, 1.0, 0.0, 1.0);
-	            vSlider.setOrientation(Orientation.VERTICAL);
-	            vSlider.setShowTickLabels(false);
-	            vSlider.setShowTickMarks(false);
-	            vSlider.translateXProperty().bind(trueAxisSeparation);
-				vSlider.translateYProperty().bind(button.heightProperty().add(BUTTON_MARGIN));
-	            vSlider.getProperties().put("axis", iAxis);
-	            
-	            addFilterListeners(vSlider);
-	            
-	        	getChartChildren().add(vSlider);
-	        	
-	        	// have to style after adding it (CSS wouldn't be accessible otherwise)
-	            vSlider.applyCss();
-	            vSlider.lookup(".range-slider .track").setStyle("-fx-opacity: 0;");
-	            // TODO fix range-bar gap
-	            vSlider.lookup(".range-slider .range-bar").setStyle("-fx-opacity: 0.15;");
-	            vSlider.lookup(".range-slider .range-bar").setDisable(true);
-	            vSlider.lookup(".range-slider .low-thumb").setStyle("-fx-shape: \"M150 0 L75 200 L225 200 Z\"; -fx-scale-y: 0.5; -fx-translate-y: 5; -fx-scale-x:1.3;");
-	            vSlider.lookup(".range-slider .high-thumb").setStyle("-fx-shape: \"M75 0 L225 0 L150 200 Z\"; -fx-scale-y: 0.5; -fx-translate-y: -5; -fx-scale-x:1.3;");
-        	}
+            RangeSlider vSlider = null;
+            if (useAxisFilters) {
+
+                // using bounds from 1.0 to 0.0 should work as we draw in this space anyway
+                vSlider = new RangeSlider(0.0, 1.0, 0.0, 1.0);
+                vSlider.setOrientation(Orientation.VERTICAL);
+                vSlider.setShowTickLabels(false);
+                vSlider.setShowTickMarks(false);
+                vSlider.translateXProperty().bind(trueAxisSeparation);
+                vSlider.translateYProperty().bind(button.heightProperty().add(BUTTON_MARGIN));
+                vSlider.getProperties().put("axis", iAxis);
+
+                addFilterListeners(vSlider);
+
+                getChartChildren().add(vSlider);
+
+                // have to style after adding it (CSS wouldn't be accessible otherwise)
+                vSlider.applyCss();
+                vSlider.lookup(".range-slider .track").setStyle("-fx-opacity: 0;");
+                // TODO fix range-bar gap
+                vSlider.lookup(".range-slider .range-bar").setStyle("-fx-opacity: 0.15;");
+                vSlider.lookup(".range-slider .range-bar").setDisable(true);
+                vSlider.lookup(".range-slider .low-thumb").setStyle("-fx-shape: \"M150 0 L75 200 L225 200 Z\"; -fx-scale-y: 0.5; -fx-translate-y: 5; -fx-scale-x:1.3;");
+                vSlider.lookup(".range-slider .high-thumb").setStyle("-fx-shape: \"M75 0 L225 0 L150 200 Z\"; -fx-scale-y: 0.5; -fx-translate-y: -5; -fx-scale-x:1.3;");
+            }
             ParallelCoordinatesAxis pcAxis = new ParallelCoordinatesAxis(numberAxis, iAxis, label, box, vSlider, button);
-        	axes.add(pcAxis);
+            button.setOnAction(event -> {
+                //invert(pcAxis);
+            });
+            axes.put(pcAxis.getId(), pcAxis);
 
         }
 
         resizeAxes();
     }
-    
+
     /**
      * Adds listeners to the given slider to be notified when high and low values change.
+     *
      * @param slider the slider to add listeners to
      */
-	private void addFilterListeners(RangeSlider slider) {
-		slider.highValueProperty().addListener(new ChangeListener<Number>() {
-			@Override
-			public void changed(ObservableValue<? extends Number> ov, Number oldVal, Number newVal) {
-				filterExecutor.submit(() -> {
-					int axisId = (int)slider.getProperties().get("axis");
-					handleFilterChange(axisId, oldVal, newVal, true);
-				});
-			}
-		});
-		
-		slider.lowValueProperty().addListener(new ChangeListener<Number>() {
-			@Override
-			public void changed(ObservableValue<? extends Number> ov, Number oldVal, Number newVal) {
-				filterExecutor.submit(() -> {
-					int axisId = (int)slider.getProperties().get("axis");
-					handleFilterChange(axisId, oldVal, newVal, false);
-				});
-			}
-		});
-	}
-	
-	/**
-	 * Handle changes to filter values. All filters have to be checked again for newly added lines.
-	 * 
-	 * @param axisId Index of the affected axis0
-	 * @param oldValue Old value of the filter (not used)
-	 * @param newValue New value of the filter
-	 * @param isHighValue Indicates whether the changed value was a high value or low value
-	 */
-	private void handleFilterChange(int axisId, Number oldValue, Number newValue, boolean isHighValue) {
-		
-		// TODO replace this with an async solution (as this isn't working as intended)
-	    long systemTime = System.currentTimeMillis();
-	    if(systemTime - lastFilterHandle < FILTER_FREQUENCY) {
-	    	return;
-	    }
-	    lastFilterHandle = systemTime;
+    private void addFilterListeners(RangeSlider slider) {
+        slider.highValueProperty().addListener(new ChangeListener<Number>() {
+            @Override
+            public void changed(ObservableValue<? extends Number> ov, Number oldVal, Number newVal) {
+                filterExecutor.submit(() -> {
+                    int axisId = (int) slider.getProperties().get("axis");
+                    handleFilterChange(axisId, oldVal, newVal, true);
+                });
+            }
+        });
 
-		ParallelCoordinatesAxis axis = getAxisById(axisId);
-		double newV = newValue.doubleValue();
-		double oldV = 0;
+        slider.lowValueProperty().addListener(new ChangeListener<Number>() {
+            @Override
+            public void changed(ObservableValue<? extends Number> ov, Number oldVal, Number newVal) {
+                filterExecutor.submit(() -> {
+                    int axisId = (int) slider.getProperties().get("axis");
+                    handleFilterChange(axisId, oldVal, newVal, false);
+                });
+            }
+        });
+    }
 
-		// sliders don't quite manage to reach extreme values
-		if(newV > 0.99)
-			newV = 1.0;
-		if(newV < 0.01)
-			newV = 0.0;
-		
-		if(isHighValue) {
-			oldV = axis.getFilterHigh();
-			axis.setFilterHigh(newV);
-			if (newV > oldV) {
-				// new lines could get active - we have to check all filters for the new lines
-				// iterate through all lines, if a new line would be added, check the line for all other filters as well
-				filterInLines(axisId, newV, true);
-			}
-			else {
-				// this can only diminish the number of visible lines
-				filterOutLines(axisId, newV, true);
-			}
-		}
-		else {
-			oldV = axis.getFilterLow();
-			axis.setFilterLow(newV);
-			if(newV < oldV) {
-				// new lines could get active - we have to check all filters for the new lines
-				// iterate through all lines, if a new line would be added, check the line for all other filters as well
-				filterInLines(axisId, newV, false);
-			}
-			else {
-				// this can only diminish the number of visible lines
-				// iterate through all lines and simply set them invisible if required
-				filterOutLines(axisId, newV, false);
-			}
-		}
-		
-	    //System.out.println("Old: " + Double.toString(oldV) + "; New: " + Double.toString(newV));
-	}
-	
-	/**
-	 * Sets records to opaque if they have to be removed according to the filter criteria.
-	 * This method can only hide lines, not make them visible.
-	 * 
-	 * @param axisId		The index of the axis the filter is on
-	 * @param filterValue	The updated filter value
-	 * @param isHighValue	Whether the filter value is a high or low value
-	 */
-	private void filterOutLines(int axisId, double filterValue, boolean isHighValue) {
-		for(Series s : series) {
-			for(Record r : s.getRecords()) {
-				// TODO investigate why this is necessary
-				if(r.getValues().get(axisId) == null)
-					continue;
-				
-				// we cannot skip lines which are already hidden here (causes a bug with brushing)
+    /**
+     * Handle changes to filter values. All filters have to be checked again for newly added lines.
+     *
+     * @param axisId      Index of the affected axis0
+     * @param oldValue    Old value of the filter (not used)
+     * @param newValue    New value of the filter
+     * @param isHighValue Indicates whether the changed value was a high value or low value
+     */
+    private void handleFilterChange(int axisId, Number oldValue, Number newValue, boolean isHighValue) {
+
+        // TODO replace this with an async solution (as this isn't working as intended)
+        long systemTime = System.currentTimeMillis();
+        if (systemTime - lastFilterHandle < FILTER_FREQUENCY) {
+            return;
+        }
+        lastFilterHandle = systemTime;
+
+        ParallelCoordinatesAxis axis = getAxisById(axisId);
+        double newV = newValue.doubleValue();
+        double oldV = 0;
+
+        // sliders don't quite manage to reach extreme values
+        if (newV > 0.99)
+            newV = 1.0;
+        if (newV < 0.01)
+            newV = 0.0;
+
+        if (isHighValue) {
+            oldV = axis.getFilterHigh();
+            axis.setFilterHigh(newV);
+            if (newV > oldV) {
+                // new lines could get active - we have to check all filters for the new lines
+                // iterate through all lines, if a new line would be added, check the line for all other filters as well
+                filterInLines(axisId, newV, true);
+            } else {
+                // this can only diminish the number of visible lines
+                filterOutLines(axisId, newV, true);
+            }
+        } else {
+            oldV = axis.getFilterLow();
+            axis.setFilterLow(newV);
+            if (newV < oldV) {
+                // new lines could get active - we have to check all filters for the new lines
+                // iterate through all lines, if a new line would be added, check the line for all other filters as well
+                filterInLines(axisId, newV, false);
+            } else {
+                // this can only diminish the number of visible lines
+                // iterate through all lines and simply set them invisible if required
+                filterOutLines(axisId, newV, false);
+            }
+        }
+
+        //System.out.println("Old: " + Double.toString(oldV) + "; New: " + Double.toString(newV));
+    }
+
+    /**
+     * Sets records to opaque if they have to be removed according to the filter criteria.
+     * This method can only hide lines, not make them visible.
+     *
+     * @param axisId      The index of the axis the filter is on
+     * @param filterValue The updated filter value
+     * @param isHighValue Whether the filter value is a high or low value
+     */
+    private void filterOutLines(int axisId, double filterValue, boolean isHighValue) {
+        for (Series s : series) {
+            for (Record r : s.getRecords()) {
+                // TODO investigate why this is necessary
+                if (r.getValues().get(axisId) == null)
+                    continue;
+
+                // we cannot skip lines which are already hidden here (causes a bug with brushing)
 //				if(!r.isVisible())
 //					continue;
-				
-				double recordValue = (double)r.getValues().get(axisId);
-				if(!isHighValue && recordValue < filterValue || isHighValue && recordValue > filterValue) {
-					r.setAxisFilterStatus(Record.Status.OPAQUE);
-					r.drawByStatus(this);
-				}
-			}
-		}
-	}
-	
-	/**
-	 * Updates filter statuses and sets records visible if allowed by other criteria as well.
-	 * This method can only make lines visible, not hide them.
-	 * 
-	 * @param axisId		The index of the axis the filter is on
-	 * @param filterValue	The updated filter value
-	 * @param isHighValue	Whether the filter value is a high or low value
-	 */
-	private void filterInLines(int axisId, double filterValue, boolean isHighValue) {
-		for(Series s : series) {
-			for(Record r : s.getRecords()) {
-				// we can skip lines which are already visible (according to filter criteria)
-				if(r.getAxisFilterStatus() == Record.Status.VISIBLE)
-					continue;
-				
-				// TODO investigate why this is necessary
-				if(r.getValues().get(axisId) == null)
-					continue;
-				
-				double recordValue = (double)r.getValues().get(axisId);
-				if((isHighValue && (recordValue <= filterValue)) || (!isHighValue && (recordValue >= filterValue))) {
-					boolean visible = true;
-					
-					//check all axes
-					for(ParallelCoordinatesAxis pcAxis : axes) {
-						int id = pcAxis.getAxisIndex();
-						
-						// TODO investigate why this is necessary
-						if(r.getValues().get(id) == null)
-							continue;
-						
-						double recordValueAxis = (double)r.getValues().get(id);
-						//check for current axis
-						if(recordValueAxis > pcAxis.getFilterHigh() || recordValueAxis < pcAxis.getFilterLow()) {
-							visible = false;
-							break;
-						}
-					}
-					
-					if(visible) {
-						// we can now set it to visible according to filter criteria
-						r.setAxisFilterStatus(Record.Status.VISIBLE);
-						r.drawByStatus(this);
-					}
-				}
-			}
-		}
-	}
-	
-	/**
-	 * Returns the axis specified by the given axis id (null if it cannot be found).
-	 * 
-	 * @param axisId the index of the axis
-	 * @return the axis or null
-	 */
-	private ParallelCoordinatesAxis getAxisById(int axisId) {
-		for(ParallelCoordinatesAxis axis : axes) {
-			if(axis.getAxisIndex() == axisId)
-				return axis;
-		}
-		return null;
-	}
-    
+
+                double recordValue = (double) r.getValues().get(axisId);
+                if (!isHighValue && recordValue < filterValue || isHighValue && recordValue > filterValue) {
+                    r.setAxisFilterStatus(Record.Status.OPAQUE);
+                    r.drawByStatus(this);
+                }
+            }
+        }
+    }
+
+    /**
+     * Updates filter statuses and sets records visible if allowed by other criteria as well.
+     * This method can only make lines visible, not hide them.
+     *
+     * @param axisId      The index of the axis the filter is on
+     * @param filterValue The updated filter value
+     * @param isHighValue Whether the filter value is a high or low value
+     */
+    private void filterInLines(int axisId, double filterValue, boolean isHighValue) {
+        for (Series s : series) {
+            for (Record r : s.getRecords()) {
+                // we can skip lines which are already visible (according to filter criteria)
+                if (r.getAxisFilterStatus() == Record.Status.VISIBLE)
+                    continue;
+
+                // TODO investigate why this is necessary
+                if (r.getValues().get(axisId) == null)
+                    continue;
+
+                double recordValue = (double) r.getValues().get(axisId);
+                if ((isHighValue && (recordValue <= filterValue)) || (!isHighValue && (recordValue >= filterValue))) {
+                    boolean visible = true;
+
+                    //check all axes
+                    for (Map.Entry<Integer, ParallelCoordinatesAxis> mapEntry : axes.entrySet()) {
+                        int id = mapEntry.getKey();
+                        ParallelCoordinatesAxis pcAxis = mapEntry.getValue();
+
+                        // TODO investigate why this is necessary
+                        if (r.getValues().get(id) == null)
+                            continue;
+
+                        double recordValueAxis = (double) r.getValues().get(id);
+                        //check for current axis
+                        if (recordValueAxis > pcAxis.getFilterHigh() || recordValueAxis < pcAxis.getFilterLow()) {
+                            visible = false;
+                            break;
+                        }
+                    }
+
+                    if (visible) {
+                        // we can now set it to visible according to filter criteria
+                        r.setAxisFilterStatus(Record.Status.VISIBLE);
+                        r.drawByStatus(this);
+                    }
+                }
+            }
+        }
+    }
+
+    /**
+     * Returns the axis specified by the given axis id (null if it cannot be found).
+     *
+     * @param axisId the index of the axis
+     * @return the axis or null
+     */
+    private ParallelCoordinatesAxis getAxisById(int axisId) {
+        return axes.get(axisId);
+    }
+
     /**
      * Manually resizes axes and filters to fit current dimensions. This is necessary as height and
      * width of axes and sliders cannot be bound.
      */
     protected void resizeAxes() {
-    	for(ParallelCoordinatesAxis axis : axes) {
-    		double buttonHeight = axis.getButton().heightProperty().doubleValue() + BUTTON_MARGIN;
-    		axis.getAxis().resize(1.0, innerHeightProperty.doubleValue() - buttonHeight);
-    		
-    		if(axis.getFilterSlider() != null)
-    			axis.getFilterSlider().resize(1.0, innerHeightProperty.doubleValue() - buttonHeight);
-    	}
+        for (ParallelCoordinatesAxis axis : axes.values()) {
+            double buttonHeight = axis.getButton().heightProperty().doubleValue() + BUTTON_MARGIN;
+            axis.getAxis().resize(1.0, innerHeightProperty.doubleValue() - buttonHeight);
+
+            if (axis.getFilterSlider() != null)
+                axis.getFilterSlider().resize(1.0, innerHeightProperty.doubleValue() - buttonHeight);
+        }
     }
 
 
@@ -429,40 +424,40 @@ public class ParallelCoordinatesChart extends HighDimensionalChart {
     }
 
     /**
-	 * Binds a given series to the chart content, and adds it to its chartChildren
-	 *
+     * Binds a given series to the chart content, and adds it to its chartChildren
+     *
      * @param s the series which the chart adds and binds to its content
      */
     @Override
     protected void bindSeries(Series s) {
-    	DoubleProperty yStartAxes = axes.get(0).getAxis().translateYProperty(); // starting point of axes
+        DoubleProperty yStartAxes = axes.get(0).getAxis().translateYProperty(); // starting point of axes
         DoubleBinding axisSeparation = getAxisSeparationBinding();
         DoubleBinding heightProp = innerHeightProperty().subtract(yStartAxes);
 
-		Double value;
-		Object dataPoint;
+        Double value;
+        Object dataPoint;
         //int numRecords = s.getRecords().size();
         int numColumns = getAttributeCount();
         //System.out.println("cols:" + numColumns + "records" + numRecords);
         for (Record record : s.getRecords()) {
             Path path = new Path();
             MoveTo moveTo = new MoveTo();
-			dataPoint = record.getAttByIndex(0);
-			value = (Double) dataPoint;
-			// for first data point, use moveto not lineto
-			// this has to be refactored when moving axes
-			moveTo.xProperty().bind(axisSeparation);
+            dataPoint = record.getAttByIndex(0);
+            value = (Double) dataPoint;
+            // for first data point, use moveto not lineto
+            // this has to be refactored when moving axes
+            moveTo.xProperty().bind(axisSeparation);
             moveTo.yProperty().bind(heightProp.subtract(heightProp.multiply(value)).add(yStartAxes));
             path.getElements().add(moveTo);
-            
+
             for (int column = 1; column < numColumns; column++) {
-				dataPoint = record.getAttByIndex(column);
+                dataPoint = record.getAttByIndex(column);
 
                 if (dataPoint instanceof String) {
                     break;
                 }
 
-				value = (Double) dataPoint;
+                value = (Double) dataPoint;
                 //System.out.println("data at " + record + ", col:" + column + ";" + "dataPoint" + value);
                 if (value != null) {
                     LineTo lineTo = new LineTo();
@@ -471,280 +466,279 @@ public class ParallelCoordinatesChart extends HighDimensionalChart {
                     path.getElements().add(lineTo);
                 }
             }
-            
+
             //handled by record.drawByStatus()
 //            path.setStroke(s.getColor());
 //            path.setOpacity(s.getOpacity());
 //            path.setStrokeWidth(pathStrokeWidth);
-            
-            if(useHighlighting)
-            	setupHighlightingEvents(path);
-            
+
+            if (useHighlighting)
+                setupHighlightingEvents(path);
+
             record.setPath(path);
             record.drawByStatus(this);
-            
+
             path.getProperties().put("record", record);
             path.setCache(true);
             path.setCacheHint(CacheHint.SPEED);
-            
+
             getChartChildren().add(path);
         }
     }
-    
+
     /**
      * Sets up event handling for the given path.
-     * 
+     *
      * @param path The path for which events should be handled
      */
     private void setupHighlightingEvents(Path path) {
-        
-		// permanent highlighting for clicks
-		path.setOnMouseClicked((MouseEvent event) -> {
-			Path src = (Path) event.getSource();
-			Record record = (Record) src.getProperties().get("record");
 
-			// we don't need to handle events for invisible records
-			if (record.isVisible()) {
+        // permanent highlighting for clicks
+        path.setOnMouseClicked((MouseEvent event) -> {
+            Path src = (Path) event.getSource();
+            Record record = (Record) src.getProperties().get("record");
 
-				// record is already highlighted
-				if (record.getHighlightingStatus() == Status.VISIBLE) {
-					record.setHighlightingStatus(Status.NONE);
-				} else {
-					record.setHighlightingStatus(Status.VISIBLE);
-					record.getPath().toFront();
-				}
+            // we don't need to handle events for invisible records
+            if (record.isVisible()) {
 
-				record.drawByStatus(this);
-			}
-		});
-        
-        
-		// temporal highlighting for hover
-		path.setOnMouseEntered((MouseEvent event) -> {
-			highlightExecutor.submit(() -> {
+                // record is already highlighted
+                if (record.getHighlightingStatus() == Status.VISIBLE) {
+                    record.setHighlightingStatus(Status.NONE);
+                } else {
+                    record.setHighlightingStatus(Status.VISIBLE);
+                    record.getPath().toFront();
+                }
 
-				Path src = (Path) event.getSource();
-				Record record = (Record) src.getProperties().get("record");
+                record.drawByStatus(this);
+            }
+        });
 
-				record.drawByStatus(this, true);
-			});
-		});
 
-		path.setOnMouseExited((MouseEvent event) -> {
-			highlightExecutor.submit(() -> {
-				Path src = (Path) event.getSource();
-				Record record = (Record) src.getProperties().get("record");
+        // temporal highlighting for hover
+        path.setOnMouseEntered((MouseEvent event) -> {
+            highlightExecutor.submit(() -> {
 
-				record.drawByStatus(this);
-			});
-		});
-	}
-    
+                Path src = (Path) event.getSource();
+                Record record = (Record) src.getProperties().get("record");
+
+                record.drawByStatus(this, true);
+            });
+        });
+
+        path.setOnMouseExited((MouseEvent event) -> {
+            highlightExecutor.submit(() -> {
+                Path src = (Path) event.getSource();
+                Record record = (Record) src.getProperties().get("record");
+
+                record.drawByStatus(this);
+            });
+        });
+    }
+
     /**
      * Enables brushing for this chart by setting up corresponding Mouse events.
      */
     public void enableBrushing() {
-    	initializeBrushingRectangle();
-    	
-    	setOnMousePressed((MouseEvent event) -> {
-    		//reset the rectangle
-    		brushingRectangle.setWidth(0.0);
-    		brushingRectangle.setHeight(0.0);
-    		brushingRectangle.setVisible(true);
-    		
-    		brushingRectangleX = event.getX();
-    		brushingRectangleY = event.getY();
-    		
-    		brushingRectangle.setX(brushingRectangleX);
-    		brushingRectangle.setY(brushingRectangleY);
-    		
-    	});
-    	
-		setOnMouseDragged((MouseEvent event) -> {
-			brushingRectangle.setWidth(event.getX() - brushingRectangleX);
-			brushingRectangle.setHeight(event.getY() - brushingRectangleY);
+        initializeBrushingRectangle();
 
-			if (brushingRectangle.getWidth() < 0) {
-				brushingRectangle.setWidth(-brushingRectangle.getWidth());
-				brushingRectangle.setX(brushingRectangleX - brushingRectangle.getWidth());
-			}
+        setOnMousePressed((MouseEvent event) -> {
+            //reset the rectangle
+            brushingRectangle.setWidth(0.0);
+            brushingRectangle.setHeight(0.0);
+            brushingRectangle.setVisible(true);
 
-			if (brushingRectangle.getHeight() < 0) {
-				brushingRectangle.setHeight(-brushingRectangle.getHeight());
-				brushingRectangle.setY(brushingRectangleY - brushingRectangle.getHeight());
-			}
-			
-			//doesn't work as it doesn't catch every intersection
+            brushingRectangleX = event.getX();
+            brushingRectangleY = event.getY();
+
+            brushingRectangle.setX(brushingRectangleX);
+            brushingRectangle.setY(brushingRectangleY);
+
+        });
+
+        setOnMouseDragged((MouseEvent event) -> {
+            brushingRectangle.setWidth(event.getX() - brushingRectangleX);
+            brushingRectangle.setHeight(event.getY() - brushingRectangleY);
+
+            if (brushingRectangle.getWidth() < 0) {
+                brushingRectangle.setWidth(-brushingRectangle.getWidth());
+                brushingRectangle.setX(brushingRectangleX - brushingRectangle.getWidth());
+            }
+
+            if (brushingRectangle.getHeight() < 0) {
+                brushingRectangle.setHeight(-brushingRectangle.getHeight());
+                brushingRectangle.setY(brushingRectangleY - brushingRectangle.getHeight());
+            }
+
+            //doesn't work as it doesn't catch every intersection
 //			if(event.getPickResult().getIntersectedNode() instanceof Path) {
 //				Path path = (Path)event.getPickResult().getIntersectedNode();
 //				path.setStroke(Color.RED);
 //			}
-		});
-    	
-    	setOnMouseReleased((MouseEvent event) -> {
-    		brushingRectangle.setVisible(false);
-    		
-    		//dismiss small rectangles
-    		if(brushingRectangle.getWidth() < 7.5 && brushingRectangle.getHeight() < 7.5)
-    			return;
-    		
-    		//handle brushing
-    		brushingExecutor.submit(() -> handleBrushing());
-    	});
+        });
+
+        setOnMouseReleased((MouseEvent event) -> {
+            brushingRectangle.setVisible(false);
+
+            //dismiss small rectangles
+            if (brushingRectangle.getWidth() < 7.5 && brushingRectangle.getHeight() < 7.5)
+                return;
+
+            //handle brushing
+            brushingExecutor.submit(() -> handleBrushing());
+        });
     }
-    
+
     /**
      * Creates and styles the rectangle which is used for brushing.
      */
     private void initializeBrushingRectangle() {
-    	brushingRectangle = new Rectangle(0,0,0,0);
-    	brushingRectangle.setVisible(false);
-    	brushingRectangle.setFill(Color.BLUE);
-    	brushingRectangle.setOpacity(0.1);
-    	getChildren().add(brushingRectangle);
+        brushingRectangle = new Rectangle(0, 0, 0, 0);
+        brushingRectangle.setVisible(false);
+        brushingRectangle.setFill(Color.BLUE);
+        brushingRectangle.setOpacity(0.1);
+        getChildren().add(brushingRectangle);
     }
-    
+
     /**
      * Handles brushing given that the brushingRectangle is present and set correctly.
      */
-    private void handleBrushing() {    	
-    	for(Series s : series) {
-    		for(Record r : s.getRecords()) {
-    			//skip lines which are not visible
-    			if(!r.isVisible())
-    				continue;
-    			
-    			Shape intersection = Shape.intersect(r.getPath(), brushingRectangle);
-    			if(intersection.getBoundsInParent().intersects(getBoundsInLocal())) {
-    				//collision detected
-    				r.setBrushingStatus(Status.VISIBLE);
-    			}
-    			else {
-    				r.setBrushingStatus(Status.OPAQUE);
-    				r.drawByStatus(this);
-    			}
-    		}
-    	}
+    private void handleBrushing() {
+        for (Series s : series) {
+            for (Record r : s.getRecords()) {
+                //skip lines which are not visible
+                if (!r.isVisible())
+                    continue;
+
+                Shape intersection = Shape.intersect(r.getPath(), brushingRectangle);
+                if (intersection.getBoundsInParent().intersects(getBoundsInLocal())) {
+                    //collision detected
+                    r.setBrushingStatus(Status.VISIBLE);
+                } else {
+                    r.setBrushingStatus(Status.OPAQUE);
+                    r.drawByStatus(this);
+                }
+            }
+        }
     }
-    
+
     /**
      * Resets all changes made by brushing.
      */
     public void resetBrushing() {
-    	if(series == null)
-    		return;
-    	
-    	for(Series s : series) {
-    		for(Record r : s.getRecords()) {
-    			r.setBrushingStatus(Status.NONE);
-    			r.drawByStatus(this);
+        if (series == null)
+            return;
+
+        for (Series s : series) {
+            for (Record r : s.getRecords()) {
+                r.setBrushingStatus(Status.NONE);
+                r.drawByStatus(this);
 //    			if(r.isVisible()) {
 //    				r.getPath().setStroke(s.getColor());
 //    				r.getPath().setOpacity(s.getOpacity());
 //    				r.getPath().setStrokeWidth(pathStrokeWidth);
 //    			}
-    		}
-    	}
+            }
+        }
     }
 
-    
-	/**
-	 * @return the useAxisFilters
-	 */
-	public boolean isUseAxisFilters() {
-		return useAxisFilters;
-	}
 
-	/**
-	 * @param useAxisFilters the useAxisFilters to set
-	 */
-	public void setUseAxisFilters(boolean useAxisFilters) {
-		this.useAxisFilters = useAxisFilters;
-	}
+    /**
+     * @return the useAxisFilters
+     */
+    public boolean isUseAxisFilters() {
+        return useAxisFilters;
+    }
 
-	/**
-	 * @return the filteredOutOpacity
-	 */
-	public double getFilteredOutOpacity() {
-		return filteredOutOpacity;
-	}
+    /**
+     * @param useAxisFilters the useAxisFilters to set
+     */
+    public void setUseAxisFilters(boolean useAxisFilters) {
+        this.useAxisFilters = useAxisFilters;
+    }
 
-	/**
-	 * @param filteredOutOpacity the filteredOutOpacity to set
-	 */
-	public void setFilteredOutOpacity(double filteredOutOpacity) {
-		this.filteredOutOpacity = filteredOutOpacity;
-	}
+    /**
+     * @return the filteredOutOpacity
+     */
+    public double getFilteredOutOpacity() {
+        return filteredOutOpacity;
+    }
 
-	/**
-	 * @return the pathStrokeWidth
-	 */
-	public double getPathStrokeWidth() {
-		return pathStrokeWidth;
-	}
+    /**
+     * @param filteredOutOpacity the filteredOutOpacity to set
+     */
+    public void setFilteredOutOpacity(double filteredOutOpacity) {
+        this.filteredOutOpacity = filteredOutOpacity;
+    }
 
-	/**
-	 * @param pathStrokeWidth the pathStrokeWidth to set
-	 */
-	public void setPathStrokeWidth(double pathStrokeWidth) {
-		this.pathStrokeWidth = pathStrokeWidth;
-	}
+    /**
+     * @return the pathStrokeWidth
+     */
+    public double getPathStrokeWidth() {
+        return pathStrokeWidth;
+    }
 
-	/**
-	 * @return the useHighlighting
-	 */
-	public boolean isUseHighlighting() {
-		return useHighlighting;
-	}
+    /**
+     * @param pathStrokeWidth the pathStrokeWidth to set
+     */
+    public void setPathStrokeWidth(double pathStrokeWidth) {
+        this.pathStrokeWidth = pathStrokeWidth;
+    }
 
-	/**
-	 * @param useHighlighting the useHighlighting to set
-	 */
-	public void setUseHighlighting(boolean useHighlighting) {
-		this.useHighlighting = useHighlighting;
-	}
+    /**
+     * @return the useHighlighting
+     */
+    public boolean isUseHighlighting() {
+        return useHighlighting;
+    }
 
-	/**
-	 * @return the highlightOpacity
-	 */
-	public double getHighlightOpacity() {
-		return highlightOpacity;
-	}
+    /**
+     * @param useHighlighting the useHighlighting to set
+     */
+    public void setUseHighlighting(boolean useHighlighting) {
+        this.useHighlighting = useHighlighting;
+    }
 
-	/**
-	 * @param highlightOpacity the highlightOpacity to set
-	 */
-	public void setHighlightOpacity(double highlightOpacity) {
-		this.highlightOpacity = highlightOpacity;
-	}
+    /**
+     * @return the highlightOpacity
+     */
+    public double getHighlightOpacity() {
+        return highlightOpacity;
+    }
 
-	/**
-	 * @return the highlightColor
-	 */
-	public Color getHighlightColor() {
-		return highlightColor;
-	}
+    /**
+     * @param highlightOpacity the highlightOpacity to set
+     */
+    public void setHighlightOpacity(double highlightOpacity) {
+        this.highlightOpacity = highlightOpacity;
+    }
 
-	/**
-	 * @param highlightColor the highlightColor to set
-	 */
-	public void setHighlightColor(Color highlightColor) {
-		this.highlightColor = highlightColor;
-	}
+    /**
+     * @return the highlightColor
+     */
+    public Color getHighlightColor() {
+        return highlightColor;
+    }
 
-	/**
-	 * @return the highlightStrokeWidth
-	 */
-	public double getHighlightStrokeWidth() {
-		return highlightStrokeWidth;
-	}
+    /**
+     * @param highlightColor the highlightColor to set
+     */
+    public void setHighlightColor(Color highlightColor) {
+        this.highlightColor = highlightColor;
+    }
 
-	/**
-	 * @param highlightStrokeWidth the highlightStrokeWidth to set
-	 */
-	public void setHighlightStrokeWidth(double highlightStrokeWidth) {
-		this.highlightStrokeWidth = highlightStrokeWidth;
-	}
-    
-    
+    /**
+     * @return the highlightStrokeWidth
+     */
+    public double getHighlightStrokeWidth() {
+        return highlightStrokeWidth;
+    }
+
+    /**
+     * @param highlightStrokeWidth the highlightStrokeWidth to set
+     */
+    public void setHighlightStrokeWidth(double highlightStrokeWidth) {
+        this.highlightStrokeWidth = highlightStrokeWidth;
+    }
+
+
 }
