@@ -80,14 +80,22 @@ public class ParallelCoordinatesAxis {
             double filterHighTmp = 1.0 - filterLow;
             double filterLowTmp = 1.0 - filterHigh;
             
+            if(!inverted) {
+            	//when inverting back to normal, change values
+            	filterHighTmp = filterHigh;
+            	filterLowTmp = filterLow;
+            }
+            
             // remove listeners and add them again afterwards
             ChangeListener<Number> highListener = (ChangeListener<Number>)filterSlider.getProperties().get("highListener");
             ChangeListener<Number> lowListener = (ChangeListener<Number>)filterSlider.getProperties().get("lowListener");
             filterSlider.highValueProperty().removeListener(highListener);
             filterSlider.lowValueProperty().removeListener(lowListener);
 
-            filterLow = filterLowTmp;
-            filterHigh = filterHighTmp;
+            if(!inverted) {
+                filterLow = filterLowTmp;
+                filterHigh = filterHighTmp;
+            }
             filterSlider.setLowValue(filterLowTmp);
             filterSlider.setHighValue(filterHighTmp);
             filterSlider.setLowValue(filterLowTmp);
