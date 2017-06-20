@@ -91,10 +91,24 @@ public class Record {
     	return !(axisFilterStatus == Status.OPAQUE || brushingStatus == Status.OPAQUE);
     }
     
+    /**
+     * Sets opacity, stroke and strokeWidth for the Path of this record according to the
+     * various statuses this record has.
+     * 
+     * @param chart	The chart the record is contained in
+     */
     public void drawByStatus(ParallelCoordinatesChart chart) {
     	drawByStatus(chart, false);
     }
     
+    /**
+     * Sets opacity, stroke and strokeWidth for the Path of this record according to the
+     * various statuses this record has.
+     * 
+     * @param chart			The chart the record is contained in
+     * @param tempHighlight	Whether highlighting is temporal and should be drawn regardless
+     * 						of highlighting Status
+     */
     public void drawByStatus(ParallelCoordinatesChart chart, boolean tempHighlight) {
     	if(!isVisible()) {
     		path.setOpacity(chart.getFilteredOutOpacity());
