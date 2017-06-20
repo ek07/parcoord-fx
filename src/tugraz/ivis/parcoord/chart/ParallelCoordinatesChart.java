@@ -5,6 +5,8 @@ import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
+import javafx.scene.control.Button;
+import javafx.scene.layout.*;
 import org.controlsfx.control.RangeSlider;
 
 import javafx.beans.binding.DoubleBinding;
@@ -18,7 +20,6 @@ import javafx.scene.CacheHint;
 import javafx.scene.chart.NumberAxis;
 import javafx.scene.control.Label;
 import javafx.scene.input.MouseEvent;
-import javafx.scene.layout.HBox;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.LineTo;
 import javafx.scene.shape.MoveTo;
@@ -30,7 +31,8 @@ import tugraz.ivis.parcoord.chart.Record.Status;
 // TODO: implement basic graph here
 // TODO: this is basically only a bit of "playing around" for now
 public class ParallelCoordinatesChart extends HighDimensionalChart {
-    private List<String> axisLabels;
+	private static final double BUTTON_MARGIN = 5.0;
+	private List<String> axisLabels;
     private ArrayList<ParallelCoordinatesAxis> axes = new ArrayList<ParallelCoordinatesAxis>();
     private boolean useAxisFilters = true;
     private double filteredOutOpacity = 0.0;
@@ -102,6 +104,8 @@ public class ParallelCoordinatesChart extends HighDimensionalChart {
         double labelYOffset = 0;
         
         List<MinMaxPair> minMax = getMinMaxValues();
+        Pane buttonPane = new Pane();
+		getChartChildren().add(buttonPane);
 
         for (int iAxis = 0; iAxis < numAxes; iAxis++) {
 
@@ -119,18 +123,24 @@ public class ParallelCoordinatesChart extends HighDimensionalChart {
             double upperBound = minMax.get(iAxis).getMaximum();
             double lowerBound = minMax.get(iAxis).getMinimum();
             double delta = Math.abs(upperBound - lowerBound);
-            
-            // axis
+
+			// Button
+			Button button = new Button("I");
+			buttonPane.getChildren().add(button); // column=3 row=1
+			button.translateXProperty().bind(trueAxisSeparation.subtract(button.widthProperty().divide(2)));
+
+			// axis
             NumberAxis numberAxis = new NumberAxis(null, lowerBound, upperBound, 1.0);
             numberAxis.setSide(Side.LEFT);
             numberAxis.setMinorTickVisible(false);
             numberAxis.setAnimated(false);
             numberAxis.translateXProperty().bind(trueAxisSeparation);
+            numberAxis.translateYProperty().bind(button.heightProperty().add(BUTTON_MARGIN));
             numberAxis.tickUnitProperty().bind(innerHeightProperty.divide(innerHeightProperty).divide(innerHeightProperty).multiply(spaceBetweenTicks).multiply(delta));
 
         	getChartChildren().add(numberAxis);
-        	
-            // label
+
+			// label
         	HBox box = null;
         	if(showLabels) {
 	            Label labelNode = new Label(label);
@@ -153,6 +163,7 @@ public class ParallelCoordinatesChart extends HighDimensionalChart {
 	            vSlider.setShowTickLabels(false);
 	            vSlider.setShowTickMarks(false);
 	            vSlider.translateXProperty().bind(trueAxisSeparation);
+				vSlider.translateYProperty().bind(button.heightProperty().add(BUTTON_MARGIN));
 	            vSlider.getProperties().put("axis", iAxis);
 	            
 	            addFilterListeners(vSlider);
@@ -168,11 +179,11 @@ public class ParallelCoordinatesChart extends HighDimensionalChart {
 	            vSlider.lookup(".range-slider .low-thumb").setStyle("-fx-shape: \"M150 0 L75 200 L225 200 Z\"; -fx-scale-y: 0.5; -fx-translate-y: 5; -fx-scale-x:1.3;");
 	            vSlider.lookup(".range-slider .high-thumb").setStyle("-fx-shape: \"M75 0 L225 0 L150 200 Z\"; -fx-scale-y: 0.5; -fx-translate-y: -5; -fx-scale-x:1.3;");
         	}
-
-            ParallelCoordinatesAxis pcAxis = new ParallelCoordinatesAxis(numberAxis, iAxis, label, box, vSlider);
+            ParallelCoordinatesAxis pcAxis = new ParallelCoordinatesAxis(numberAxis, iAxis, label, box, vSlider, button);
         	axes.add(pcAxis);
 
         }
+
         resizeAxes();
     }
     
@@ -355,13 +366,13 @@ public class ParallelCoordinatesChart extends HighDimensionalChart {
      * Manually resizes axes and filters to fit current dimensions. This is necessary as height and
      * width of axes and sliders cannot be bound.
      */
-	
     protected void resizeAxes() {
     	for(ParallelCoordinatesAxis axis : axes) {
-    		axis.getAxis().resize(1.0, innerHeightProperty.doubleValue());
+    		double buttonHeight = axis.getButton().heightProperty().doubleValue() + BUTTON_MARGIN;
+    		axis.getAxis().resize(1.0, innerHeightProperty.doubleValue() - buttonHeight);
     		
     		if(axis.getFilterSlider() != null)
-    			axis.getFilterSlider().resize(1.0, innerHeightProperty.doubleValue());
+    			axis.getFilterSlider().resize(1.0, innerHeightProperty.doubleValue() - buttonHeight);
     	}
     }
 
@@ -424,8 +435,10 @@ public class ParallelCoordinatesChart extends HighDimensionalChart {
      */
     @Override
     protected void bindSeries(Series s) {
+    	DoubleProperty yStartAxes = axes.get(0).getAxis().translateYProperty(); // starting point of axes
         DoubleBinding axisSeparation = getAxisSeparationBinding();
-        DoubleProperty heightProp = innerHeightProperty();
+        DoubleBinding heightProp = innerHeightProperty().subtract(yStartAxes);
+
 		Double value;
 		Object dataPoint;
         //int numRecords = s.getRecords().size();
@@ -439,7 +452,7 @@ public class ParallelCoordinatesChart extends HighDimensionalChart {
 			// for first data point, use moveto not lineto
 			// this has to be refactored when moving axes
 			moveTo.xProperty().bind(axisSeparation);
-            moveTo.yProperty().bind(heightProp.subtract(heightProp.multiply(value)));
+            moveTo.yProperty().bind(heightProp.subtract(heightProp.multiply(value)).add(yStartAxes));
             path.getElements().add(moveTo);
             
             for (int column = 1; column < numColumns; column++) {
@@ -454,7 +467,7 @@ public class ParallelCoordinatesChart extends HighDimensionalChart {
                 if (value != null) {
                     LineTo lineTo = new LineTo();
                     lineTo.xProperty().bind(axisSeparation.add(axisSeparation.multiply(column)));
-                    lineTo.yProperty().bind(heightProp.subtract(heightProp.multiply(value)));
+                    lineTo.yProperty().bind(heightProp.subtract(heightProp.multiply(value)).add(yStartAxes));
                     path.getElements().add(lineTo);
                 }
             }
