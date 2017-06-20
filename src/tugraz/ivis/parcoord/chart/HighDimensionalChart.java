@@ -36,7 +36,7 @@ public abstract class HighDimensionalChart extends Chart implements Brushable {
      * Represents inner values (without padding, etc.)
      */
     protected DoubleProperty innerWidthProperty = new SimpleDoubleProperty();
-    
+
     /**
      * Holds the minimum and maximum values per dimension (to reconstruct normalized data).
      */
@@ -179,67 +179,81 @@ public abstract class HighDimensionalChart extends Chart implements Brushable {
         }
         series.clear();
     }
-    
+
+    /**
+     * Forces redraw on whole series (not on axes!)
+     * Method more used for testing and refactoring than for real deployment
+     * TODO: removed
+     */
+    public void redrawAllSeries() {
+        for (Series s : series) {
+            for (Record r : s.getRecords()) {
+                getChartChildren().removeAll(r.getPath());
+            }
+            bindSeries(s);
+        }
+    }
+
     /**
      * Calculates the minimum and maximum value per dimension of the data given by all series and contained records.
      * Can only be used if the data is not normalized.
-     * 
+     *
      * @return A List of MinMaxPairs ordered by dimensions as present in the data.
      */
     @Deprecated
     public List<MinMaxPair> calculateMinMaxPerAxis() {
-    	List<MinMaxPair> result = new ArrayList<MinMaxPair>();
-    	
-    	int nrDim = series.get(0).getRecord(0).getValues().size();
-    	
-    	for(int i = 0; i < nrDim; i++) {
-    		result.add(new MinMaxPair(Double.POSITIVE_INFINITY, Double.NEGATIVE_INFINITY));
-    	}
-    	
-		for (Series s : series) {
-			for (Record r : s.getRecords()) {
-				for (int dim = 0; dim < nrDim; dim++) {
-					//TODO remove this check
-					if (r.getValues().get(dim) instanceof Number) {
-						double value = (double)r.getValues().get(dim);
-						
-						if (value < result.get(dim).getMinimum())
-							result.get(dim).setMinimum(value);
-						
-						if (value > result.get(dim).getMaximum())
-							result.get(dim).setMaximum(value);
-					}
-				}
-			}
-		}
-    	
-    	return result;
+        List<MinMaxPair> result = new ArrayList<MinMaxPair>();
+
+        int nrDim = series.get(0).getRecord(0).getValues().size();
+
+        for (int i = 0; i < nrDim; i++) {
+            result.add(new MinMaxPair(Double.POSITIVE_INFINITY, Double.NEGATIVE_INFINITY));
+        }
+
+        for (Series s : series) {
+            for (Record r : s.getRecords()) {
+                for (int dim = 0; dim < nrDim; dim++) {
+                    //TODO remove this check
+                    if (r.getValues().get(dim) instanceof Number) {
+                        double value = (double) r.getValues().get(dim);
+
+                        if (value < result.get(dim).getMinimum())
+                            result.get(dim).setMinimum(value);
+
+                        if (value > result.get(dim).getMaximum())
+                            result.get(dim).setMaximum(value);
+                    }
+                }
+            }
+        }
+
+        return result;
     }
-    
+
     /**
      * Sets the minimum and maximum values per dimension.
-     * 
-     * @param minMaxArray	A List of Double[]. Each element of the list represents one dimension.
-     * 						The first element of each Double[] is the minimum value, the second
-     * 						the maximum value.
+     *
+     * @param minMaxArray A List of Double[]. Each element of the list represents one dimension.
+     *                    The first element of each Double[] is the minimum value, the second
+     *                    the maximum value.
      */
     public void setMinMaxValuesFromArray(List<Double[]> minMaxArray) {
-    	minMaxValues = new ArrayList<MinMaxPair>();
-    	for(Double[] ar : minMaxArray) {
-    		minMaxValues.add(new MinMaxPair(ar[0], ar[1]));
-    	}
+        minMaxValues = new ArrayList<MinMaxPair>();
+        for (Double[] ar : minMaxArray) {
+            minMaxValues.add(new MinMaxPair(ar[0], ar[1]));
+        }
     }
-    
+
     public List<MinMaxPair> getMinMaxValues() {
-		return minMaxValues;
-	}
+        return minMaxValues;
+    }
 
-	public void setMinMaxValues(List<MinMaxPair> minMaxValues) {
-		this.minMaxValues = minMaxValues;
-	}
+    public void setMinMaxValues(List<MinMaxPair> minMaxValues) {
+        this.minMaxValues = minMaxValues;
+    }
 
 
-	/**
+    /**
      * Subclasses should implement this method to bind axes to the chart
      */
     protected abstract void bindAxes();
@@ -254,7 +268,7 @@ public abstract class HighDimensionalChart extends Chart implements Brushable {
      * also, the paths of the records should be set accordingly
      */
     protected abstract void bindSeries(Series s);
-    
+
     /**
      * Subclasses should implement this method to reorder certain elements in the
      * z dimension (if necessary)

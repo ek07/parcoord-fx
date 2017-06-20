@@ -32,6 +32,19 @@ public class ParallelCoordinatesAxis {
         }
 
         this.button = button;
+
+        axis.setTickLabelFormatter(new NumberAxis.DefaultFormatter(axis) {
+            @Override
+            public String toString(Number value) {
+                // note we are printing minus value
+                double val = value.doubleValue();
+                if (inverted) {
+                    val = -val;
+                }
+
+                return super.toString(new Double(val));//new Double(val));
+            }
+        });
     }
 
 
@@ -92,7 +105,16 @@ public class ParallelCoordinatesAxis {
         return id;
     }
 
-    public void setId(int id) {
-        this.id = id;
+    public void invert() {
+        double lower = axis.getLowerBound();
+        double higher = axis.getUpperBound();
+        double temp = lower;
+
+        lower = -higher;
+        higher = -temp;
+
+        axis.setUpperBound(higher);
+        axis.setLowerBound(lower);
+        inverted = !inverted;
     }
 }

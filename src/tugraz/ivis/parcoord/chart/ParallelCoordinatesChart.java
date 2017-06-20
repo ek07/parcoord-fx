@@ -132,8 +132,12 @@ public class ParallelCoordinatesChart extends HighDimensionalChart {
             numberAxis.setMinorTickVisible(false);
             numberAxis.setAnimated(false);
             numberAxis.translateXProperty().bind(trueAxisSeparation);
-            numberAxis.translateYProperty().bind(button.heightProperty().add(BUTTON_MARGIN));
-            numberAxis.tickUnitProperty().bind(innerHeightProperty.divide(innerHeightProperty).divide(innerHeightProperty).multiply(spaceBetweenTicks).multiply(delta));
+            DoubleBinding heightButton = button.heightProperty().add(BUTTON_MARGIN);
+            numberAxis.translateYProperty().bind(heightButton);
+            DoubleBinding innerHeightWithoutButton = innerHeightProperty().subtract(heightButton);
+            numberAxis.tickUnitProperty().bind(
+                    innerHeightWithoutButton.divide(innerHeightWithoutButton).divide(innerHeightWithoutButton)
+                            .multiply(spaceBetweenTicks).multiply(delta));
 
             getChartChildren().add(numberAxis);
 
@@ -178,10 +182,10 @@ public class ParallelCoordinatesChart extends HighDimensionalChart {
             }
             ParallelCoordinatesAxis pcAxis = new ParallelCoordinatesAxis(numberAxis, iAxis, label, box, vSlider, button);
             button.setOnAction(event -> {
-                //invert(pcAxis);
+                pcAxis.invert();
+                redrawAllSeries();
             });
             axes.put(pcAxis.getId(), pcAxis);
-
         }
 
         resizeAxes();
@@ -447,7 +451,7 @@ public class ParallelCoordinatesChart extends HighDimensionalChart {
             // for first data point, use moveto not lineto
             // this has to be refactored when moving axes
             moveTo.xProperty().bind(axisSeparation);
-            moveTo.yProperty().bind(heightProp.subtract(heightProp.multiply(value)).add(yStartAxes));
+            moveTo.yProperty().bind(getValueOnAxis(yStartAxes, heightProp, value, 0));
             path.getElements().add(moveTo);
 
             for (int column = 1; column < numColumns; column++) {
@@ -462,7 +466,7 @@ public class ParallelCoordinatesChart extends HighDimensionalChart {
                 if (value != null) {
                     LineTo lineTo = new LineTo();
                     lineTo.xProperty().bind(axisSeparation.add(axisSeparation.multiply(column)));
-                    lineTo.yProperty().bind(heightProp.subtract(heightProp.multiply(value)).add(yStartAxes));
+                    lineTo.yProperty().bind(getValueOnAxis(yStartAxes, heightProp, value, column));
                     path.getElements().add(lineTo);
                 }
             }
@@ -484,6 +488,20 @@ public class ParallelCoordinatesChart extends HighDimensionalChart {
 
             getChartChildren().add(path);
         }
+    }
+
+    private DoubleBinding getValueOnAxis(DoubleProperty yStartAxes, DoubleBinding heightAxis, double value, int axisId) {
+        ParallelCoordinatesAxis axis = axes.get(axisId);
+        DoubleBinding binding;
+
+        if (!axis.isInverted()) {
+            binding = heightAxis.subtract(heightAxis.multiply(value)).add(yStartAxes);
+        } else {
+            binding = heightAxis.multiply(value).add(yStartAxes);
+        }
+
+        //binding.add(yStartAxes);
+        return binding;
     }
 
     /**
