@@ -11,6 +11,8 @@ import javafx.scene.CacheHint;
 import javafx.scene.chart.NumberAxis;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
+import javafx.scene.image.Image;
+import javafx.scene.image.ImageView;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Pane;
@@ -101,8 +103,10 @@ public class ParallelCoordinatesChart extends HighDimensionalChart {
         double labelYOffset = 0;
 
         List<MinMaxPair> minMax = getMinMaxValues();
+
         Pane buttonPane = new Pane();
         getChartChildren().add(buttonPane);
+        Image btnInvertImg = new Image("resources/invert_1x.png");
 
         for (int iAxis = 0; iAxis < numAxes; iAxis++) {
 
@@ -122,7 +126,8 @@ public class ParallelCoordinatesChart extends HighDimensionalChart {
             double delta = Math.abs(upperBound - lowerBound);
 
             // Button
-            Button button = new Button("I");
+            Button button = new Button();
+            button.setGraphic(new ImageView(btnInvertImg));
             button.translateXProperty().bind(trueAxisSeparation.subtract(button.widthProperty().divide(2)));
             buttonPane.getChildren().add(button);
 
