@@ -5,9 +5,6 @@
  */
 package tugraz.ivis.parcoord.chart;
 
-import java.util.ArrayList;
-import java.util.List;
-
 import javafx.beans.property.DoubleProperty;
 import javafx.beans.property.SimpleDoubleProperty;
 import javafx.collections.FXCollections;
@@ -16,6 +13,9 @@ import javafx.scene.chart.Chart;
 import javafx.scene.shape.LineTo;
 import javafx.scene.shape.MoveTo;
 import javafx.scene.shape.Path;
+
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * @author mchegini

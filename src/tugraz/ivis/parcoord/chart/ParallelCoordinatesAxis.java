@@ -34,20 +34,69 @@ public class ParallelCoordinatesAxis {
 
         this.button = button;
 
+        setTickLabelFormatter();
+    }
+
+    /**
+     * Registers a TickLabelFormatter which also correctly displays values for the inverted axis
+     */
+    private void setTickLabelFormatter() {
         axis.setTickLabelFormatter(new NumberAxis.DefaultFormatter(axis) {
             @Override
             public String toString(Number value) {
-                // note we are printing minus value
+                // if the lower and upper bound were negated, the displayed value has to be fixed
                 double val = value.doubleValue();
                 if (inverted) {
                     val = -val;
                 }
 
-                return super.toString(new Double(val));//new Double(val));
+                // call original formatter with inverted value
+                return super.toString(new Double(val));
             }
         });
     }
 
+
+    /**
+     * Inverts the axis by negating both lower and upper values
+     * this seems to be the only efficient and easy way to correctly display the values
+     */
+    @SuppressWarnings("unchecked")
+	public void invert() {
+        double lower = axis.getLowerBound();
+        double higher = axis.getUpperBound();
+        double temp = lower;
+
+        lower = -higher;
+        higher = -temp;
+
+        axis.setUpperBound(higher);
+        axis.setLowerBound(lower);
+        inverted = !inverted;
+        
+        if(filterSlider != null) {
+
+            // adjust filters
+            double filterHighTmp = 1.0 - filterLow;
+            double filterLowTmp = 1.0 - filterHigh;
+            
+            // remove listeners and add them again afterwards
+            ChangeListener<Number> highListener = (ChangeListener<Number>)filterSlider.getProperties().get("highListener");
+            ChangeListener<Number> lowListener = (ChangeListener<Number>)filterSlider.getProperties().get("lowListener");
+            filterSlider.highValueProperty().removeListener(highListener);
+            filterSlider.lowValueProperty().removeListener(lowListener);
+
+            filterLow = filterLowTmp;
+            filterHigh = filterHighTmp;
+            filterSlider.setLowValue(filterLowTmp);
+            filterSlider.setHighValue(filterHighTmp);
+            filterSlider.setLowValue(filterLowTmp);
+            filterSlider.setHighValue(filterHighTmp);
+            
+            filterSlider.highValueProperty().addListener(highListener);
+            filterSlider.lowValueProperty().addListener(lowListener);
+        }
+    }
 
     public NumberAxis getAxis() {
         return axis;
@@ -104,39 +153,5 @@ public class ParallelCoordinatesAxis {
 
     public int getId() {
         return id;
-    }
-
-	@SuppressWarnings("unchecked")
-	public void invert() {
-        double lower = axis.getLowerBound();
-        double higher = axis.getUpperBound();
-        double temp = lower;
-
-        lower = -higher;
-        higher = -temp;
-
-        axis.setUpperBound(higher);
-        axis.setLowerBound(lower);
-        inverted = !inverted;
-        
-        // adjust filters
-        double filterHighTmp = 1.0 - filterLow;
-        double filterLowTmp = 1.0 - filterHigh;
-        
-        // remove listeners and add them again afterwards
-        ChangeListener<Number> highListener = (ChangeListener<Number>)filterSlider.getProperties().get("highListener");
-        ChangeListener<Number> lowListener = (ChangeListener<Number>)filterSlider.getProperties().get("lowListener");
-        filterSlider.highValueProperty().removeListener(highListener);
-        filterSlider.lowValueProperty().removeListener(lowListener);
-
-        filterLow = filterLowTmp;
-        filterHigh = filterHighTmp;
-        filterSlider.setLowValue(filterLowTmp);
-        filterSlider.setHighValue(filterHighTmp);
-        filterSlider.setLowValue(filterLowTmp);
-        filterSlider.setHighValue(filterHighTmp);
-        
-        filterSlider.highValueProperty().addListener(highListener);
-        filterSlider.lowValueProperty().addListener(lowListener);
     }
 }

@@ -261,7 +261,6 @@ public class ParallelCoordinatesChart extends HighDimensionalChart {
         	isHighValue = !isHighValue;
         }
 
-
         if (isHighValue) {
             oldV = axis.getFilterHigh();
             axis.setFilterHigh(newV);
@@ -510,6 +509,16 @@ public class ParallelCoordinatesChart extends HighDimensionalChart {
         }
     }
 
+
+    /**
+     * Converts the given data value to the correct coordinate which matches the given axis.
+     * If the axis is inverted, this method also correctly considers this
+     *
+     * @param yStartAxes the y-Coordinate where the axis begins
+     * @param heightAxis the available space for the given axis
+     * @param value      the value of the data to be displayed
+     * @param axisId     the id of the axis (original index)
+     */
     private DoubleBinding getValueOnAxis(DoubleProperty yStartAxes, DoubleBinding heightAxis, double value, int axisId) {
         ParallelCoordinatesAxis axis = axes.get(axisId);
         DoubleBinding binding;
@@ -520,7 +529,6 @@ public class ParallelCoordinatesChart extends HighDimensionalChart {
             binding = heightAxis.multiply(value).add(yStartAxes);
         }
 
-        //binding.add(yStartAxes);
         return binding;
     }
 
