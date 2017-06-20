@@ -1,5 +1,6 @@
 package tugraz.ivis.parcoord.chart;
 
+import javafx.beans.value.ChangeListener;
 import javafx.scene.chart.NumberAxis;
 import javafx.scene.control.Button;
 import javafx.scene.layout.HBox;
@@ -105,7 +106,8 @@ public class ParallelCoordinatesAxis {
         return id;
     }
 
-    public void invert() {
+	@SuppressWarnings("unchecked")
+	public void invert() {
         double lower = axis.getLowerBound();
         double higher = axis.getUpperBound();
         double temp = lower;
@@ -116,5 +118,25 @@ public class ParallelCoordinatesAxis {
         axis.setUpperBound(higher);
         axis.setLowerBound(lower);
         inverted = !inverted;
+        
+        // adjust filters
+        double filterHighTmp = 1.0 - filterLow;
+        double filterLowTmp = 1.0 - filterHigh;
+        
+        // remove listeners and add them again afterwards
+        ChangeListener<Number> highListener = (ChangeListener<Number>)filterSlider.getProperties().get("highListener");
+        ChangeListener<Number> lowListener = (ChangeListener<Number>)filterSlider.getProperties().get("lowListener");
+        filterSlider.highValueProperty().removeListener(highListener);
+        filterSlider.lowValueProperty().removeListener(lowListener);
+
+        filterLow = filterLowTmp;
+        filterHigh = filterHighTmp;
+        filterSlider.setLowValue(filterLowTmp);
+        filterSlider.setHighValue(filterHighTmp);
+        filterSlider.setLowValue(filterLowTmp);
+        filterSlider.setHighValue(filterHighTmp);
+        
+        filterSlider.highValueProperty().addListener(highListener);
+        filterSlider.lowValueProperty().addListener(lowListener);
     }
 }

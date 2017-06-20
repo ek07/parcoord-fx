@@ -184,6 +184,7 @@ public class ParallelCoordinatesChart extends HighDimensionalChart {
             button.setOnAction(event -> {
                 pcAxis.invert();
                 redrawAllSeries();
+                reorder();
             });
             axes.put(pcAxis.getId(), pcAxis);
         }
@@ -197,25 +198,34 @@ public class ParallelCoordinatesChart extends HighDimensionalChart {
      * @param slider the slider to add listeners to
      */
     private void addFilterListeners(RangeSlider slider) {
-        slider.highValueProperty().addListener(new ChangeListener<Number>() {
+    	
+    	ChangeListener<Number> highListener = new ChangeListener<Number>() {
             @Override
             public void changed(ObservableValue<? extends Number> ov, Number oldVal, Number newVal) {
                 filterExecutor.submit(() -> {
+                	System.out.println("high changed");
                     int axisId = (int) slider.getProperties().get("axis");
                     handleFilterChange(axisId, oldVal, newVal, true);
                 });
             }
-        });
-
-        slider.lowValueProperty().addListener(new ChangeListener<Number>() {
+        };
+    	
+        slider.highValueProperty().addListener(highListener);
+        slider.getProperties().put("highListener", highListener);
+        
+        ChangeListener<Number> lowListener = new ChangeListener<Number>() {
             @Override
             public void changed(ObservableValue<? extends Number> ov, Number oldVal, Number newVal) {
                 filterExecutor.submit(() -> {
+                	System.out.println("low changed");
                     int axisId = (int) slider.getProperties().get("axis");
                     handleFilterChange(axisId, oldVal, newVal, false);
                 });
             }
-        });
+        };
+        
+        slider.lowValueProperty().addListener(lowListener);
+        slider.getProperties().put("lowListener", lowListener);
     }
 
     /**
@@ -228,7 +238,7 @@ public class ParallelCoordinatesChart extends HighDimensionalChart {
      */
     private void handleFilterChange(int axisId, Number oldValue, Number newValue, boolean isHighValue) {
 
-        // TODO replace this with an async solution (as this isn't working as intended)
+        // TODO replace this with a proper async solution (as this isn't working as intended)
         long systemTime = System.currentTimeMillis();
         if (systemTime - lastFilterHandle < FILTER_FREQUENCY) {
             return;
@@ -238,12 +248,19 @@ public class ParallelCoordinatesChart extends HighDimensionalChart {
         ParallelCoordinatesAxis axis = getAxisById(axisId);
         double newV = newValue.doubleValue();
         double oldV = 0;
-
+        
         // sliders don't quite manage to reach extreme values
         if (newV > 0.99)
             newV = 1.0;
         if (newV < 0.01)
             newV = 0.0;
+        
+        //everything is switched around when inverted
+        if(axis.isInverted()) {
+        	newV = 1.0 - newV;
+        	isHighValue = !isHighValue;
+        }
+
 
         if (isHighValue) {
             oldV = axis.getFilterHigh();
@@ -326,16 +343,19 @@ public class ParallelCoordinatesChart extends HighDimensionalChart {
 
                     //check all axes
                     for (Map.Entry<Integer, ParallelCoordinatesAxis> mapEntry : axes.entrySet()) {
-                        int id = mapEntry.getKey();
+                        //int id = mapEntry.getKey();
                         ParallelCoordinatesAxis pcAxis = mapEntry.getValue();
+                        int id = pcAxis.getAxisIndex();
 
                         // TODO investigate why this is necessary
                         if (r.getValues().get(id) == null)
                             continue;
 
                         double recordValueAxis = (double) r.getValues().get(id);
+                        double low = pcAxis.getFilterLow();
+                        double high = pcAxis.getFilterHigh();
                         //check for current axis
-                        if (recordValueAxis > pcAxis.getFilterHigh() || recordValueAxis < pcAxis.getFilterLow()) {
+                        if (recordValueAxis > high || recordValueAxis < low) {
                             visible = false;
                             break;
                         }
