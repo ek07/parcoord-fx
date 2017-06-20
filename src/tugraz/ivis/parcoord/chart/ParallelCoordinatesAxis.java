@@ -33,20 +33,64 @@ public class ParallelCoordinatesAxis {
 
         this.button = button;
 
+        setTickLabelFormatter();
+    }
+
+    /**
+     * Registers a TickLabelFormatter which also correctly displays values for the inverted axis
+     */
+    private void setTickLabelFormatter() {
         axis.setTickLabelFormatter(new NumberAxis.DefaultFormatter(axis) {
             @Override
             public String toString(Number value) {
-                // note we are printing minus value
+                // if the lower and upper bound were negated, the displayed value has to be fixed
                 double val = value.doubleValue();
                 if (inverted) {
                     val = -val;
                 }
 
-                return super.toString(new Double(val));//new Double(val));
+                // call original formatter with inverted value
+                return super.toString(new Double(val));
             }
         });
     }
 
+
+    /**
+     * Inverts the axis by negating both lower and upper values
+     * this seems to be the only efficient and easy way to correctly display the values
+     */
+    public void invert() {
+        double lower = axis.getLowerBound();
+        double higher = axis.getUpperBound();
+        double temp = lower;
+
+        lower = -higher;
+        higher = -temp;
+
+        axis.setUpperBound(higher);
+        axis.setLowerBound(lower);
+
+        if (filterSlider != null) {
+            /*
+             * TODO: discuss with thomas if necessary and if possible to get working
+            double oldHighV = filterSlider.getHighValue();
+            double oldLowV = filterSlider.getLowValue();
+            System.out.println("===");
+            System.out.println("oldHighVal:"+oldHighV+"|oldLowVal:"+oldLowV);
+            filterLow = 1 - oldHighV;
+            filterHigh = 1 - oldLowV;
+            System.out.println("newHigh:"+filterHigh+"|oldLowVal:"+filterLow);
+            filterSlider.setHighValue(filterHigh);
+            filterSlider.setLowValue(filterLow);
+            System.out.println("aftersetHigh:"+filterSlider.getHighValue()+"|afterSetLow:"+filterSlider.getLowValue());*/
+            // for now, just reset filters
+            //filterSlider.setLowValue(0.0);
+            //filterSlider.setHighValue(1.0);
+        }
+
+        inverted = !inverted;
+    }
 
     public NumberAxis getAxis() {
         return axis;
@@ -105,16 +149,4 @@ public class ParallelCoordinatesAxis {
         return id;
     }
 
-    public void invert() {
-        double lower = axis.getLowerBound();
-        double higher = axis.getUpperBound();
-        double temp = lower;
-
-        lower = -higher;
-        higher = -temp;
-
-        axis.setUpperBound(higher);
-        axis.setLowerBound(lower);
-        inverted = !inverted;
-    }
 }

@@ -183,6 +183,9 @@ public class ParallelCoordinatesChart extends HighDimensionalChart {
             ParallelCoordinatesAxis pcAxis = new ParallelCoordinatesAxis(numberAxis, iAxis, label, box, vSlider, button);
             button.setOnAction(event -> {
                 pcAxis.invert();
+                pcAxis.getFilterSlider().setHighValue(1.0);
+                pcAxis.getFilterSlider().setLowValue(0.0);
+                // for now, simply reset filter sliders
                 redrawAllSeries();
             });
             axes.put(pcAxis.getId(), pcAxis);
@@ -244,6 +247,13 @@ public class ParallelCoordinatesChart extends HighDimensionalChart {
             newV = 1.0;
         if (newV < 0.01)
             newV = 0.0;
+
+        // if inverted axis, think the other way around
+        // NOTE: if other type of update is needed, think this through - @thorsten,thomas
+        if (axes.get(axisId).isInverted()) {
+            isHighValue = !isHighValue;
+            newV = 1 - newV;
+        }
 
         if (isHighValue) {
             oldV = axis.getFilterHigh();
@@ -490,6 +500,16 @@ public class ParallelCoordinatesChart extends HighDimensionalChart {
         }
     }
 
+
+    /**
+     * Converts the given data value to the correct coordinate which matches the given axis.
+     * If the axis is inverted, this method also correctly considers this
+     *
+     * @param yStartAxes the y-Coordinate where the axis begins
+     * @param heightAxis the available space for the given axis
+     * @param value      the value of the data to be displayed
+     * @param axisId     the id of the axis (original index)
+     */
     private DoubleBinding getValueOnAxis(DoubleProperty yStartAxes, DoubleBinding heightAxis, double value, int axisId) {
         ParallelCoordinatesAxis axis = axes.get(axisId);
         DoubleBinding binding;
@@ -500,7 +520,6 @@ public class ParallelCoordinatesChart extends HighDimensionalChart {
             binding = heightAxis.multiply(value).add(yStartAxes);
         }
 
-        //binding.add(yStartAxes);
         return binding;
     }
 
