@@ -91,8 +91,24 @@ public class Record {
     	return !(axisFilterStatus == Status.OPAQUE || brushingStatus == Status.OPAQUE);
     }
     
-    public boolean isHighlightedOrBrushed() {
-    	return brushingStatus == Status.VISIBLE || highlightingStatus == Status.VISIBLE;
+    public void drawByStatus(ParallelCoordinatesChart chart) {
+    	drawByStatus(chart, false);
+    }
+    
+    public void drawByStatus(ParallelCoordinatesChart chart, boolean tempHighlight) {
+    	if(!isVisible()) {
+    		path.setOpacity(chart.getFilteredOutOpacity());
+    	}
+    	else if(highlightingStatus == Status.VISIBLE || tempHighlight) {
+    		path.setOpacity(chart.getHighlightOpacity());
+    		path.setStrokeWidth(chart.getHighlightStrokeWidth());
+    		path.setStroke(chart.getHighlightColor());
+    	}
+    	else {
+    		path.setOpacity(series.getOpacity());
+    		path.setStrokeWidth(chart.getPathStrokeWidth());
+    		path.setStroke(series.getColor());
+    	}
     }
 
     public Object getAttByIndex(int index) {

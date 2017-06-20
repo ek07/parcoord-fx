@@ -11,10 +11,10 @@ import javafx.beans.binding.DoubleBinding;
 import javafx.beans.property.DoubleProperty;
 import javafx.beans.value.ChangeListener;
 import javafx.beans.value.ObservableValue;
-import javafx.event.EventHandler;
 import javafx.geometry.Orientation;
 import javafx.geometry.Pos;
 import javafx.geometry.Side;
+import javafx.scene.CacheHint;
 import javafx.scene.chart.NumberAxis;
 import javafx.scene.control.Label;
 import javafx.scene.input.MouseEvent;
@@ -275,18 +275,14 @@ public class ParallelCoordinatesChart extends HighDimensionalChart {
 				if(r.getValues().get(axisId) == null)
 					continue;
 				
-				// we could skip lines which are already hidden here, would probably just diminish performance though
-				if(!r.isVisible())
-					continue;
+				// we cannot skip lines which are already hidden here (causes a bug with brushing)
+//				if(!r.isVisible())
+//					continue;
 				
 				double recordValue = (double)r.getValues().get(axisId);
 				if(!isHighValue && recordValue < filterValue || isHighValue && recordValue > filterValue) {
 					r.setAxisFilterStatus(Record.Status.OPAQUE);
-					r.getPath().setOpacity(filteredOutOpacity);
-					
-					//remove other statuses
-					r.setBrushingStatus(Status.NONE);
-					r.setHighlightingStatus(Status.NONE);
+					r.drawByStatus(this);
 				}
 			}
 		}
@@ -334,13 +330,7 @@ public class ParallelCoordinatesChart extends HighDimensionalChart {
 					if(visible) {
 						// we can now set it to visible according to filter criteria
 						r.setAxisFilterStatus(Record.Status.VISIBLE);
-						// still have to check for other stuff like brushing
-						if(r.isVisible()) {
-							r.getPath().setOpacity(s.getOpacity());
-							r.getPath().setStroke(s.getColor());
-							// to reset brushing / highlighting effects
-							r.getPath().setStrokeWidth(pathStrokeWidth);
-						}
+						r.drawByStatus(this);
 					}
 				}
 			}
@@ -468,15 +458,22 @@ public class ParallelCoordinatesChart extends HighDimensionalChart {
                     path.getElements().add(lineTo);
                 }
             }
-            path.setStroke(s.getColor());
-            path.setOpacity(s.getOpacity());
-            path.setStrokeWidth(pathStrokeWidth);
-            path.getProperties().put("record", record);            
+            
+            //handled by record.drawByStatus()
+//            path.setStroke(s.getColor());
+//            path.setOpacity(s.getOpacity());
+//            path.setStrokeWidth(pathStrokeWidth);
             
             if(useHighlighting)
             	setupHighlightingEvents(path);
             
             record.setPath(path);
+            record.drawByStatus(this);
+            
+            path.getProperties().put("record", record);
+            path.setCache(true);
+            path.setCacheHint(CacheHint.SPEED);
+            
             getChartChildren().add(path);
         }
     }
@@ -488,76 +485,45 @@ public class ParallelCoordinatesChart extends HighDimensionalChart {
      */
     private void setupHighlightingEvents(Path path) {
         
-    	// permanent highlighting for clicks
-        path.setOnMouseClicked(new EventHandler<MouseEvent>() {
+		// permanent highlighting for clicks
+		path.setOnMouseClicked((MouseEvent event) -> {
+			Path src = (Path) event.getSource();
+			Record record = (Record) src.getProperties().get("record");
 
-			@Override
-			public void handle(MouseEvent event) {
+			// we don't need to handle events for invisible records
+			if (record.isVisible()) {
+
+				// record is already highlighted
+				if (record.getHighlightingStatus() == Status.VISIBLE) {
+					record.setHighlightingStatus(Status.NONE);
+				} else {
+					record.setHighlightingStatus(Status.VISIBLE);
+					record.getPath().toFront();
+				}
+
+				record.drawByStatus(this);
+			}
+		});
+        
+        
+		// temporal highlighting for hover
+		path.setOnMouseEntered((MouseEvent event) -> {
+			highlightExecutor.submit(() -> {
+
 				Path src = (Path) event.getSource();
 				Record record = (Record) src.getProperties().get("record");
 
-				// we don't need to handle events for invisible records
-				if (record.isVisible()) {
-					double newOpacity = highlightOpacity;
-					Color newColor = highlightColor;
-					double newStrokeWidth = highlightStrokeWidth;
+				record.drawByStatus(this, true);
+			});
+		});
 
-					// record is already highlighted
-					if (record.getHighlightingStatus() == Status.VISIBLE) {
-						newOpacity = record.getSeries().getOpacity();
-						newColor = record.getSeries().getColor();
-						newStrokeWidth = pathStrokeWidth;
-						record.setHighlightingStatus(Status.NONE);
-					} else {
-						record.setHighlightingStatus(Status.VISIBLE);
-					}
+		path.setOnMouseExited((MouseEvent event) -> {
+			highlightExecutor.submit(() -> {
+				Path src = (Path) event.getSource();
+				Record record = (Record) src.getProperties().get("record");
 
-					src.setOpacity(newOpacity);
-					src.setStroke(newColor);
-					src.setStrokeWidth(newStrokeWidth);
-					src.toFront();
-				}
-			}
-        });
-        
-        
-        //temporal highlighting for hover
-        path.setOnMouseEntered(new EventHandler<MouseEvent>() {
-
-			@Override
-			public void handle(MouseEvent event) {
-				highlightExecutor.submit(() -> {
-
-					Path src = (Path)event.getSource();
-					Record record = (Record)src.getProperties().get("record");
-					
-					if(record.isVisible()) {
-						src.setOpacity(highlightOpacity);
-						src.setStroke(highlightColor);
-						src.setStrokeWidth(highlightStrokeWidth);
-					}
-				});
-			}
-        	
-        });
-
-		path.setOnMouseExited(new EventHandler<MouseEvent>() {
-
-			@Override
-			public void handle(MouseEvent event) {
-				highlightExecutor.submit(() -> {
-					Path src = (Path) event.getSource();
-					Record record = (Record) src.getProperties().get("record");
-
-					// we don't want to revert records to normal if they are highlighted
-					if (record.isVisible() && !(record.getHighlightingStatus() == Status.VISIBLE)) {
-						src.setOpacity(record.getSeries().getOpacity());
-						src.setStroke(record.getSeries().getColor());
-						src.setStrokeWidth(pathStrokeWidth);
-					}
-
-				});
-			}
+				record.drawByStatus(this);
+			});
 		});
 	}
     
@@ -642,7 +608,7 @@ public class ParallelCoordinatesChart extends HighDimensionalChart {
     			}
     			else {
     				r.setBrushingStatus(Status.OPAQUE);
-    				r.getPath().setOpacity(filteredOutOpacity);
+    				r.drawByStatus(this);
     			}
     		}
     	}
@@ -658,12 +624,114 @@ public class ParallelCoordinatesChart extends HighDimensionalChart {
     	for(Series s : series) {
     		for(Record r : s.getRecords()) {
     			r.setBrushingStatus(Status.NONE);
-    			if(r.isVisible()) {
-    				r.getPath().setStroke(s.getColor());
-    				r.getPath().setOpacity(s.getOpacity());
-    				r.getPath().setStrokeWidth(pathStrokeWidth);
-    			}
+    			r.drawByStatus(this);
+//    			if(r.isVisible()) {
+//    				r.getPath().setStroke(s.getColor());
+//    				r.getPath().setOpacity(s.getOpacity());
+//    				r.getPath().setStrokeWidth(pathStrokeWidth);
+//    			}
     		}
     	}
     }
+
+    
+	/**
+	 * @return the useAxisFilters
+	 */
+	public boolean isUseAxisFilters() {
+		return useAxisFilters;
+	}
+
+	/**
+	 * @param useAxisFilters the useAxisFilters to set
+	 */
+	public void setUseAxisFilters(boolean useAxisFilters) {
+		this.useAxisFilters = useAxisFilters;
+	}
+
+	/**
+	 * @return the filteredOutOpacity
+	 */
+	public double getFilteredOutOpacity() {
+		return filteredOutOpacity;
+	}
+
+	/**
+	 * @param filteredOutOpacity the filteredOutOpacity to set
+	 */
+	public void setFilteredOutOpacity(double filteredOutOpacity) {
+		this.filteredOutOpacity = filteredOutOpacity;
+	}
+
+	/**
+	 * @return the pathStrokeWidth
+	 */
+	public double getPathStrokeWidth() {
+		return pathStrokeWidth;
+	}
+
+	/**
+	 * @param pathStrokeWidth the pathStrokeWidth to set
+	 */
+	public void setPathStrokeWidth(double pathStrokeWidth) {
+		this.pathStrokeWidth = pathStrokeWidth;
+	}
+
+	/**
+	 * @return the useHighlighting
+	 */
+	public boolean isUseHighlighting() {
+		return useHighlighting;
+	}
+
+	/**
+	 * @param useHighlighting the useHighlighting to set
+	 */
+	public void setUseHighlighting(boolean useHighlighting) {
+		this.useHighlighting = useHighlighting;
+	}
+
+	/**
+	 * @return the highlightOpacity
+	 */
+	public double getHighlightOpacity() {
+		return highlightOpacity;
+	}
+
+	/**
+	 * @param highlightOpacity the highlightOpacity to set
+	 */
+	public void setHighlightOpacity(double highlightOpacity) {
+		this.highlightOpacity = highlightOpacity;
+	}
+
+	/**
+	 * @return the highlightColor
+	 */
+	public Color getHighlightColor() {
+		return highlightColor;
+	}
+
+	/**
+	 * @param highlightColor the highlightColor to set
+	 */
+	public void setHighlightColor(Color highlightColor) {
+		this.highlightColor = highlightColor;
+	}
+
+	/**
+	 * @return the highlightStrokeWidth
+	 */
+	public double getHighlightStrokeWidth() {
+		return highlightStrokeWidth;
+	}
+
+	/**
+	 * @param highlightStrokeWidth the highlightStrokeWidth to set
+	 */
+	public void setHighlightStrokeWidth(double highlightStrokeWidth) {
+		this.highlightStrokeWidth = highlightStrokeWidth;
+	}
+    
+    
 }
