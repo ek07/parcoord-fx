@@ -107,6 +107,8 @@ public class ParallelCoordinatesChart extends HighDimensionalChart {
         Pane buttonPane = new Pane();
         getChartChildren().add(buttonPane);
         Image btnInvertImg = new Image("resources/invert_1x.png");
+        Image btnRightImg = new Image("resources/right_1x.png");
+        Image btnLeftImg = new Image("resources/left_1x.png");
 
         for (int iAxis = 0; iAxis < numAxes; iAxis++) {
 
@@ -125,11 +127,22 @@ public class ParallelCoordinatesChart extends HighDimensionalChart {
             double lowerBound = minMax.get(iAxis).getMinimum();
             double delta = Math.abs(upperBound - lowerBound);
 
-            // Button
-            Button button = new Button();
-            button.setGraphic(new ImageView(btnInvertImg));
-            button.translateXProperty().bind(trueAxisSeparation.subtract(button.widthProperty().divide(2)));
-            buttonPane.getChildren().add(button);
+            // Buttons
+            Button btnInvert = new Button();
+            btnInvert.setGraphic(new ImageView(btnInvertImg));
+            DoubleBinding invertBtnPosition = trueAxisSeparation.subtract(btnInvert.widthProperty().divide(2));
+            btnInvert.translateXProperty().bind(invertBtnPosition);
+            buttonPane.getChildren().add(btnInvert);
+
+            Button btnRight = new Button();
+            btnRight.setGraphic(new ImageView(btnRightImg));
+            btnRight.translateXProperty().bind(invertBtnPosition.add(btnInvert.widthProperty()));
+            buttonPane.getChildren().add(btnRight);
+
+            Button btnLeft = new Button();
+            btnLeft.setGraphic(new ImageView(btnLeftImg));
+            btnLeft.translateXProperty().bind(invertBtnPosition.subtract(btnLeft.widthProperty()));
+            buttonPane.getChildren().add(btnLeft);
 
             // axis
             NumberAxis numberAxis = new NumberAxis(null, lowerBound, upperBound, 1.0);
@@ -137,7 +150,7 @@ public class ParallelCoordinatesChart extends HighDimensionalChart {
             numberAxis.setMinorTickVisible(false);
             numberAxis.setAnimated(false);
             numberAxis.translateXProperty().bind(trueAxisSeparation);
-            DoubleBinding heightButton = button.heightProperty().add(BUTTON_MARGIN);
+            DoubleBinding heightButton = btnInvert.heightProperty().add(BUTTON_MARGIN);
             numberAxis.translateYProperty().bind(heightButton);
             DoubleBinding innerHeightWithoutButton = innerHeightProperty().subtract(heightButton);
             numberAxis.tickUnitProperty().bind(
@@ -169,7 +182,7 @@ public class ParallelCoordinatesChart extends HighDimensionalChart {
                 vSlider.setShowTickLabels(false);
                 vSlider.setShowTickMarks(false);
                 vSlider.translateXProperty().bind(trueAxisSeparation);
-                vSlider.translateYProperty().bind(button.heightProperty().add(BUTTON_MARGIN));
+                vSlider.translateYProperty().bind(btnInvert.heightProperty().add(BUTTON_MARGIN));
                 vSlider.getProperties().put("axis", iAxis);
 
                 addFilterListeners(vSlider);
@@ -185,16 +198,67 @@ public class ParallelCoordinatesChart extends HighDimensionalChart {
                 vSlider.lookup(".range-slider .low-thumb").setStyle("-fx-shape: \"M150 0 L75 200 L225 200 Z\"; -fx-scale-y: 0.5; -fx-translate-y: 5; -fx-scale-x:1.3;");
                 vSlider.lookup(".range-slider .high-thumb").setStyle("-fx-shape: \"M75 0 L225 0 L150 200 Z\"; -fx-scale-y: 0.5; -fx-translate-y: -5; -fx-scale-x:1.3;");
             }
-            ParallelCoordinatesAxis pcAxis = new ParallelCoordinatesAxis(numberAxis, iAxis, label, box, vSlider, button);
-            button.setOnAction(event -> {
+            ParallelCoordinatesAxis pcAxis = new ParallelCoordinatesAxis(numberAxis, iAxis, label, box, vSlider, btnInvert);
+            btnInvert.setOnAction(event -> {
                 pcAxis.invert();
                 redrawAllSeries();
                 reorder();
+            });
+
+            btnRight.setOnAction(event -> {
+                int newIndex = pcAxis.getAxisIndex() == (numAxes - 1) ? 0 : pcAxis.getAxisIndex() + 1;
+                moveAxis(pcAxis, newIndex);
+                //axes.clear();
+                //bindAxes();
+                //redrawAllSeries();
+                //reorder();
+            });
+
+            btnLeft.setOnAction(event -> {
+                int newIndex = pcAxis.getAxisIndex() == 0 ? numAxes - 1 : pcAxis.getAxisIndex() - 1;
+                moveAxis(pcAxis, newIndex);
+                //axes.clear();
+                //bindAxes();
+                //redrawAllSeries();
+                //reorder();
             });
             axes.put(pcAxis.getId(), pcAxis);
         }
 
         resizeAxes();
+    }
+
+    private void moveAxis(ParallelCoordinatesAxis pcAxis, int newPos) {
+        int currIndex = pcAxis.getAxisIndex();
+        int deltaPosition = newPos - currIndex;
+
+        if (deltaPosition == 0) {
+            System.out.println("MoveAxis: Same position for axis");
+            return; // same position, nothing to do here
+        }
+
+        if (newPos < -1 || newPos > (axes.size() - 1)) {
+            System.out.println("MoveAxis: invalid axes index");
+            return;
+        }
+
+        for (ParallelCoordinatesAxis axis : axes.values()) {
+            int axisIndex = axis.getAxisIndex();
+
+            if (deltaPosition < 0) {
+                // move pcAxis right, move all others left
+                if (axisIndex < currIndex) {
+                    axis.moveToPosition(axisIndex + 1, axes);
+                }
+            } else {
+                // move pcAxis right, move all others left
+                if (axisIndex > currIndex) {
+                    axis.moveToPosition(axisIndex - 1, axes);
+                }
+            }
+        }
+
+        pcAxis.moveToPosition(newPos, axes);
     }
 
     /**
@@ -203,32 +267,32 @@ public class ParallelCoordinatesChart extends HighDimensionalChart {
      * @param slider the slider to add listeners to
      */
     private void addFilterListeners(RangeSlider slider) {
-    	
-    	ChangeListener<Number> highListener = new ChangeListener<Number>() {
+
+        ChangeListener<Number> highListener = new ChangeListener<Number>() {
             @Override
             public void changed(ObservableValue<? extends Number> ov, Number oldVal, Number newVal) {
                 filterExecutor.submit(() -> {
-                	System.out.println("high changed");
+                    System.out.println("high changed");
                     int axisId = (int) slider.getProperties().get("axis");
                     handleFilterChange(axisId, oldVal, newVal, true);
                 });
             }
         };
-    	
+
         slider.highValueProperty().addListener(highListener);
         slider.getProperties().put("highListener", highListener);
-        
+
         ChangeListener<Number> lowListener = new ChangeListener<Number>() {
             @Override
             public void changed(ObservableValue<? extends Number> ov, Number oldVal, Number newVal) {
                 filterExecutor.submit(() -> {
-                	System.out.println("low changed");
+                    System.out.println("low changed");
                     int axisId = (int) slider.getProperties().get("axis");
                     handleFilterChange(axisId, oldVal, newVal, false);
                 });
             }
         };
-        
+
         slider.lowValueProperty().addListener(lowListener);
         slider.getProperties().put("lowListener", lowListener);
     }
@@ -253,17 +317,17 @@ public class ParallelCoordinatesChart extends HighDimensionalChart {
         ParallelCoordinatesAxis axis = getAxisById(axisId);
         double newV = newValue.doubleValue();
         double oldV = 0;
-        
+
         // sliders don't quite manage to reach extreme values
         if (newV > 0.99)
             newV = 1.0;
         if (newV < 0.01)
             newV = 0.0;
-        
+
         //everything is switched around when inverted
-        if(axis.isInverted()) {
-        	newV = 1.0 - newV;
-        	isHighValue = !isHighValue;
+        if (axis.isInverted()) {
+            newV = 1.0 - newV;
+            isHighValue = !isHighValue;
         }
 
         if (isHighValue) {
