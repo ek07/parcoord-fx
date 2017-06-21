@@ -106,9 +106,9 @@ public class ParallelCoordinatesChart extends HighDimensionalChart {
 
         Pane buttonPane = new Pane();
         getChartChildren().add(buttonPane);
-        Image btnInvertImg = new Image("resources/invert_1x.png");
-        Image btnRightImg = new Image("resources/right_1x.png");
-        Image btnLeftImg = new Image("resources/left_1x.png");
+        Image btnInvertImg = new Image("resources/invert_1x.png", 17, 17, true, true);
+        Image btnRightImg = new Image("resources/right_1x.png", 17, 17, true, true);
+        Image btnLeftImg = new Image("resources/left_1x.png", 17, 17, true, true);
 
         for (int iAxis = 0; iAxis < numAxes; iAxis++) {
 

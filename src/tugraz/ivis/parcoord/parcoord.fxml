@@ -4,11 +4,11 @@
 <?import javafx.scene.layout.*?>
 <?import tugraz.ivis.parcoord.chart.ParallelCoordinatesChart?>
 <AnchorPane maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="600.0"
-            prefWidth="600.0" xmlns:tugraz.ivis.parcoord.chart="http://javafx.com/javafx/8.0.112"
+            prefWidth="1000.0" xmlns:tugraz.ivis.parcoord.chart="http://javafx.com/javafx/8.0.112"
             xmlns="http://javafx.com/javafx/8.0.112" xmlns:fx="http://javafx.com/fxml/1"
             fx:controller="tugraz.ivis.parcoord.Controller">
     <children>
-        <BorderPane layoutX="218.0" layoutY="84.0" prefHeight="500.0" prefWidth="500.0" AnchorPane.bottomAnchor="0.0"
+        <BorderPane layoutX="218.0" layoutY="84.0" prefHeight="600.0" prefWidth="1000.0" AnchorPane.bottomAnchor="0.0"
                     AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
             <top>
                 <MenuBar BorderPane.alignment="CENTER">
@@ -32,7 +32,7 @@
                 </MenuBar>
             </top>
             <center>
-                <ParallelCoordinatesChart fx:id="parcoordChart" title="ParCoordChartTest (TODO)"
+                <ParallelCoordinatesChart fx:id="parcoordChart" title="ParCoordChart - Cars"
                                           BorderPane.alignment="CENTER">
                 </ParallelCoordinatesChart>
             </center>

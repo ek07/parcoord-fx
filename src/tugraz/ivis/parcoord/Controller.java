@@ -2,6 +2,7 @@ package tugraz.ivis.parcoord;
 
 import java.io.File;
 import java.net.URL;
+import java.util.List;
 import java.util.ResourceBundle;
 
 import javafx.event.ActionEvent;
@@ -13,6 +14,7 @@ import javafx.scene.paint.Color;
 import javafx.stage.FileChooser;
 import javafx.stage.Stage;
 import tugraz.ivis.parcoord.chart.ParallelCoordinatesChart;
+import tugraz.ivis.parcoord.chart.Record;
 import tugraz.ivis.parcoord.chart.Series;
 import tugraz.ivis.parcoord.util.importer.DataModel;
 
@@ -58,11 +60,11 @@ public class Controller implements Initializable {
                 "'Information Visualisation'\nat Graz University of Technology by:" +
                 "\n  Thomas Absenger\n  Mohammad Chegini\n  Thorsten Ruprechter\n  Helmut Zöhrer");
     }
-    
+
     @FXML
     public void onResetBrushing(ActionEvent actionEvent) {
-    	if(parcoordChart != null)
-    		parcoordChart.resetBrushing();
+        if (parcoordChart != null)
+            parcoordChart.resetBrushing();
     }
 
     private void importDataFromFile(String absolutePath) {
@@ -81,7 +83,7 @@ public class Controller implements Initializable {
             dm.printDataSet();
             setDataModelToGraph(dm);
         }
-        
+
         parcoordChart.enableBrushing();
     }
 
@@ -101,20 +103,28 @@ public class Controller implements Initializable {
     }
 
     public void setDataModelToGraph(DataModel dm) {
-        Series s = new Series(dm.getItemsAsRecords(), Color.BLACK, 0.2);
+        List<Record> series = dm.getItemsAsRecords();
+        List<Record> series1 = series.subList(0, series.size() / 2);
+        List<Record> series2 = series.subList(series.size() / 2, series.size());
+
+        Series s1 = new Series(series1, Color.RED, 0.2);
+        Series s2 = new Series(series2, Color.BLUE, 0.2);
         parcoordChart.clear();
         parcoordChart.setMinMaxValuesFromArray(dm.getMinMaxValues());
         parcoordChart.setAxisLabels(dm.getDataHeader());
-        parcoordChart.addSeries(s);
+        parcoordChart.addSeries(s1);
+        parcoordChart.addSeries(s2);
+        parcoordChart.setHighlightColor(Color.BLACK);
+        parcoordChart.setHighlightStrokeWidth(3);
     }
 
     //TODO: this is just a "hack" for testing
     public void initTestGraphData() {
         // TODO: hardcoded path because its simply quicker for now
-         DataModel dm = new DataModel("/home/thorsten/Uni/master/Sem3/InfoVis/Ass3/parcoord-fx/src/data/auto3.csv", ";", true);
+        DataModel dm = new DataModel("/home/thorsten/Uni/master/Sem3/InfoVis/Ass3/parcoord-fx/src/data/auto3.csv", ";", true);
         //new DataModel("C:\\Users\\mchegini\\Documents\\NetBeansProjects\\PaCoPlot\\parcoord-fx\\src\\data\\auto3.csv", ";", true);
         //DataModel dm = new DataModel("C:\\Users\\Thomas\\Documents\\Uni\\10. Semester\\ivis\\project\\parcoord-fx\\src\\data\\auto3.csv", ";", true);
-
         setDataModelToGraph(dm);
+        parcoordChart.enableBrushing();
     }
 }
