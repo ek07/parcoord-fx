@@ -18,23 +18,52 @@ public class ParallelCoordinatesAxis {
     private RangeSlider filterSlider;
     private double filterHigh;
     private double filterLow;
-    private Button button;
+    private Button btnInvert;
+    private Button btnLeft;
+    private Button btnRight;
 
-
-    public ParallelCoordinatesAxis(NumberAxis axis, int axisIndex, String label, HBox labelBox, RangeSlider filterSlider, Button button) {
-        this.axis = axis;
+    /**
+     * A basic constructor which allows for initial creation of the object
+     *
+     * @param axisIndex
+     */
+    public ParallelCoordinatesAxis(int axisIndex) {
+        this.id = axisIndex;
         this.axisIndex = axisIndex;
+    }
+
+    public ParallelCoordinatesAxis(int axisIndex, NumberAxis axis, String label, HBox labelBox, RangeSlider filterSlider, Button btnInvert, Button btnLeft, Button btnRight) {
+        this(axisIndex);
+        initialize(axis, label, labelBox, filterSlider, btnInvert, btnLeft, btnRight);
+    }
+
+    /**
+     * supports the basic constructor by setting the values AFTER already creating the axis
+     * for now, this is the approach which is used when calling bindAxes in the chart
+     * TODO moveAxes: not sure if this is needed or can be replaced when refactoring for performance
+     *
+     * @param axis
+     * @param label
+     * @param labelBox
+     * @param filterSlider
+     * @param btnInvert
+     * @param btnLeft
+     * @param btnRight
+     */
+    public void initialize(NumberAxis axis, String label, HBox labelBox, RangeSlider filterSlider, Button btnInvert, Button btnLeft, Button btnRight) {
+        this.axis = axis;
         this.label = label;
         this.labelBox = labelBox;
         this.filterSlider = filterSlider;
-        this.id = axisIndex; // set the initial position as the index
 
         if (filterSlider != null) {
             filterHigh = filterSlider.getHighValue();
             filterLow = filterSlider.getLowValue();
         }
 
-        this.button = button;
+        this.btnInvert = btnInvert;
+        this.btnLeft = btnLeft;
+        this.btnRight = btnRight;
 
         setTickLabelFormatter();
     }
@@ -152,29 +181,44 @@ public class ParallelCoordinatesAxis {
         this.filterLow = filterLow;
     }
 
-    public Button getButton() {
-        return button;
+    public Button getBtnInvert() {
+        return btnInvert;
     }
 
-    public void setButton(Button button) {
-        this.button = button;
+    public void setBtnInvert(Button btnInvert) {
+        this.btnInvert = btnInvert;
     }
-
 
     public int getId() {
         return id;
     }
 
-    public void moveToPosition(int newPos, Map<Integer, ParallelCoordinatesAxis> axes) {
-        ParallelCoordinatesAxis oldAxisOnPosition = null;
-        for (ParallelCoordinatesAxis axis : axes.values()) {
-            if (newPos == axis.getAxisIndex()) {
-                oldAxisOnPosition = axis;
-                break;
-            }
-        }
-
-        // todo finish
-        //button.translateXProperty().bind();
+    public Button getBtnLeft() {
+        return btnLeft;
     }
+
+    public void setBtnLeft(Button btnLeft) {
+        this.btnLeft = btnLeft;
+    }
+
+    public Button getBtnRight() {
+        return btnRight;
+    }
+
+    public void setBtnRight(Button btnRight) {
+        this.btnRight = btnRight;
+    }
+
+    /**
+     * Moves this axes and ALL its components to a new position
+     * TODO moveAxes: in the future, this should be replaced by something better performing (or something doing more)
+     */
+    public void moveToPosition(int newPos, Map<Integer, ParallelCoordinatesAxis> axes/*DoubleBinding axisSeparation*/) {
+        // todo finish
+        // for now, only reset index!
+        // because afterwards, we attempt a full redraw anyway
+        // for the future, only reset btns and numberaxis X position here
+        setAxisIndex(newPos);
+    }
+
 }

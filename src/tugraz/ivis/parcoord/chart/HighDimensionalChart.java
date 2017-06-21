@@ -135,6 +135,7 @@ public abstract class HighDimensionalChart extends Chart implements Brushable {
         series.add(s);
 
         if (firstDraw) {
+            createAxes();
             bindAxes();
         }
 
@@ -252,6 +253,10 @@ public abstract class HighDimensionalChart extends Chart implements Brushable {
         this.minMaxValues = minMaxValues;
     }
 
+    /**
+     * Subclasses should implement this method to create axes for the chart (but NOT bind it)
+     */
+    protected abstract void createAxes();
 
     /**
      * Subclasses should implement this method to bind axes to the chart
