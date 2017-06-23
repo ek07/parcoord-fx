@@ -42,15 +42,25 @@ public class Controller implements Initializable {
     @FXML
     public void onFileOpen(ActionEvent actionEvent) {
         FileChooser fileChooser = new FileChooser();
+
         fileChooser.setTitle("Open CSV File");
         // for now, select code repo - better for testing
-        //fileChooser.setInitialDirectory(new File(System.getProperty("user.home")));
+        // changed to current directory
+        fileChooser.setInitialDirectory(new File(System.getProperty("user.dir")));
         fileChooser.getExtensionFilters().addAll(
                 new FileChooser.ExtensionFilter("CSV", "*.csv"),
                 new FileChooser.ExtensionFilter("All", "*.*"));
         File file = fileChooser.showOpenDialog(stage);
+
         if (file != null) {
+            /*
+                wanted to do some kind of feedback while loading, didn't succeed
+
+                //parcoordChart.clear();
+                parcoordChart.setTitle("loading ...");
+            */
             importDataFromFile(file.getAbsolutePath());
+            parcoordChart.setTitle(file.getName());
         }
     }
 
@@ -70,6 +80,7 @@ public class Controller implements Initializable {
     private void importDataFromFile(String absolutePath) {
         // just print for testing for now
         DataModel dm = null;
+
         try {
             dm = new DataModel(absolutePath, ";", true);
         } catch (Exception e) {

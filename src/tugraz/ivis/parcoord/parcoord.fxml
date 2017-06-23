@@ -32,7 +32,7 @@
                 </MenuBar>
             </top>
             <center>
-                <ParallelCoordinatesChart fx:id="parcoordChart" title="ParCoordChart - Cars"
+                <ParallelCoordinatesChart fx:id="parcoordChart" title="no file chosen yet ..."
                                           BorderPane.alignment="CENTER">
                 </ParallelCoordinatesChart>
             </center>
