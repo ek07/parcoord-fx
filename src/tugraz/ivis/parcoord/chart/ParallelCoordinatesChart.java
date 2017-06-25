@@ -18,6 +18,7 @@ import javafx.scene.layout.HBox;
 import javafx.scene.layout.Pane;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.*;
+import javafx.scene.text.TextAlignment;
 import org.controlsfx.control.RangeSlider;
 import tugraz.ivis.parcoord.chart.Record.Status;
 
@@ -35,6 +36,8 @@ public class ParallelCoordinatesChart extends HighDimensionalChart {
     private double filteredOutOpacity = 0.0;
 
     private double pathStrokeWidth = 1.0;
+
+    private double legend_height_relative = 0.05;
 
     private boolean useHighlighting = true;
     private double highlightOpacity = 1.0;
@@ -902,4 +905,78 @@ public class ParallelCoordinatesChart extends HighDimensionalChart {
     }
 
 
+    public void drawLegend() {
+
+        DoubleBinding legendSeparation = innerWidthProperty().divide(series.size() + 1);
+        DoubleBinding heightProp = innerHeightProperty().multiply(1);
+        DoubleBinding widthProp = innerWidthProperty().multiply(1);
+
+        DoubleBinding heightPropLegendBorder = innerHeightProperty().multiply(1 - legend_height_relative);
+        DoubleBinding heightPropLegend = innerHeightProperty().multiply(1 - legend_height_relative / 2);
+
+
+        Path path = new Path();
+
+        MoveTo moveTo = new MoveTo();
+        moveTo.setX(0);
+        moveTo.yProperty().bind(heightPropLegendBorder);
+        path.getElements().add(moveTo);
+
+        LineTo lineTo = new LineTo();
+        lineTo.xProperty().bind(widthProp);
+        lineTo.yProperty().bind(heightPropLegendBorder);
+        path.getElements().add(lineTo);
+
+        lineTo = new LineTo();
+        lineTo.xProperty().bind(widthProp);
+        lineTo.yProperty().bind(heightProp);
+        path.getElements().add(lineTo);
+
+        lineTo = new LineTo();
+        lineTo.setX(0);
+        lineTo.yProperty().bind(heightProp);
+        path.getElements().add(lineTo);
+
+        lineTo = new LineTo();
+        lineTo.setX(0);
+        lineTo.yProperty().bind(heightPropLegendBorder);
+        path.getElements().add(lineTo);
+
+        getChartChildren().add(path);
+
+        HBox box = null;
+        Label labelNode = null;
+
+        for (int curr = 0; curr < series.size(); curr++)
+        {
+            path = new Path();
+
+            labelNode = new Label(series.get(curr).getName());
+            labelNode.setMinWidth(100);
+            labelNode.setAlignment(Pos.CENTER_LEFT);
+
+            box = new HBox(labelNode);
+            box.setAlignment(Pos.CENTER_LEFT);
+            box.translateXProperty().bind(legendSeparation.multiply(curr + 1));
+            box.translateYProperty().bind(heightPropLegend);
+
+            getChartChildren().add(box);
+
+            moveTo = new MoveTo();
+            moveTo.xProperty().bind(legendSeparation.multiply(curr + 1).subtract(5));
+            moveTo.yProperty().bind(heightPropLegend);
+            path.getElements().add(moveTo);
+
+            lineTo = new LineTo();
+            lineTo.xProperty().bind(legendSeparation.multiply(curr + 1).subtract(20));
+            lineTo.yProperty().bind(heightPropLegend);
+            path.getElements().add(lineTo);
+
+            path.setStrokeWidth(2);
+            path.setStroke(series.get(curr).getColor());
+
+            getChartChildren().add(path);
+        }
+
+    }
 }
