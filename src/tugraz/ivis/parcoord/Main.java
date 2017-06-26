@@ -21,7 +21,7 @@ public class Main extends Application {
         Controller controller = loader.getController();
         controller.setStage(primaryStage);
         primaryStage.show();
-        //controller.initTestGraphData();
+        controller.initTestGraphData();
     }
 
     public static void main(String[] args) {

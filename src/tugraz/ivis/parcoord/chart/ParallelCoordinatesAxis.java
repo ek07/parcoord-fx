@@ -3,6 +3,9 @@ package tugraz.ivis.parcoord.chart;
 import javafx.beans.value.ChangeListener;
 import javafx.scene.chart.NumberAxis;
 import javafx.scene.control.Button;
+import javafx.scene.input.ClipboardContent;
+import javafx.scene.input.Dragboard;
+import javafx.scene.input.TransferMode;
 import javafx.scene.layout.HBox;
 import org.controlsfx.control.RangeSlider;
 
@@ -66,6 +69,51 @@ public class ParallelCoordinatesAxis {
         this.btnRight = btnRight;
 
         setTickLabelFormatter();
+    }
+
+    public void registerDragAndDropListener(ParallelCoordinatesChart chart) {
+        filterSlider.setOnDragDetected(event -> {
+            /* drag was detected, start a drag-and-drop gesture*/
+            /* allow any transfer mode */
+            Dragboard db = axis.startDragAndDrop(TransferMode.MOVE);
+
+            /* Put a string on a dragboard */
+            ClipboardContent content = new ClipboardContent();
+            content.putString(axisIndex + "");
+            db.setContent(content);
+            System.out.println("drag started from:" + axisIndex);
+
+            event.consume();
+        });
+
+        // this is needed to register which transfer modes are allowed
+        filterSlider.setOnDragOver(event -> {
+            /* data is dragged over the target */
+            /* if it has a string data */
+            if (event.getDragboard().hasString()) {
+                /* allow for both copying and moving, whatever user chooses */
+                event.acceptTransferModes(TransferMode.MOVE);
+            }
+
+            event.consume();
+        });
+
+        filterSlider.setOnDragDropped(event -> {
+            /* data dropped */
+            /* if there is a string data on dragboard, read it and use it */
+            boolean success = false;
+            if (event.getDragboard().hasString()) {
+                success = true;
+                String newIndexAsString = event.getDragboard().getString();
+                System.out.println("drag dropped at:" + axisIndex + " from " + newIndexAsString);
+
+                chart.moveAxis(axisIndex, Integer.parseInt(newIndexAsString));
+            }
+            /* let the source know whether the string was successfully
+             * transferred and used */
+            event.setDropCompleted(success);
+            event.consume();
+        });
     }
 
     /**

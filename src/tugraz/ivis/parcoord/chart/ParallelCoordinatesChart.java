@@ -18,7 +18,6 @@ import javafx.scene.layout.HBox;
 import javafx.scene.layout.Pane;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.*;
-import javafx.scene.text.TextAlignment;
 import org.controlsfx.control.RangeSlider;
 import tugraz.ivis.parcoord.chart.Record.Status;
 
@@ -223,27 +222,20 @@ public class ParallelCoordinatesChart extends HighDimensionalChart {
                 // redraws everything by hard right now
                 // TODO moveAxes: in the future, this should be replaced by something better performing
                 int newIndex = pcAxis.getAxisIndex() == (numAxes - 1) ? 0 : pcAxis.getAxisIndex() + 1;
-                moveAxis(pcAxis, newIndex);
-                removeAxesFromChartChildren();
+                moveAxis(pcAxis.getAxisIndex(), newIndex);
                 getChartChildren().remove(buttonPane);
-                bindAxes();
-                redrawAllSeries();
-                reorder();
             });
 
             btnLeft.setOnAction(event -> {
                 // redraws everything by hard right now
                 // TODO moveAxes: in the future, this should be replaced by something better performing
                 int newIndex = pcAxis.getAxisIndex() == 0 ? numAxes - 1 : pcAxis.getAxisIndex() - 1;
-                moveAxis(pcAxis, newIndex);
-                removeAxesFromChartChildren();
+                moveAxis(pcAxis.getAxisIndex(), newIndex);
                 getChartChildren().remove(buttonPane);
-                bindAxes();
-                redrawAllSeries();
-                reorder();
             });
 
             pcAxis.initialize(numberAxis, label, box, vSlider, btnInvert, btnLeft, btnRight);
+            pcAxis.registerDragAndDropListener(this);
         }
 
         resizeAxes();
@@ -270,9 +262,9 @@ public class ParallelCoordinatesChart extends HighDimensionalChart {
      * Moves the given axes to the correct position and repositions the other ones
      * TODO moveAxes: in the future, this should be replaced by something better performing (or be doing more)
      */
-    private void moveAxis(ParallelCoordinatesAxis pcAxis, int newIndex) {
-        int movingAxisIndex = pcAxis.getAxisIndex();
-        int deltaPosition = newIndex - movingAxisIndex;
+    public void moveAxis(int oldIndex, int newIndex) {
+        int deltaPosition = newIndex - oldIndex;
+        ParallelCoordinatesAxis currAxis = getAxisByIndex(oldIndex);
 
         if (deltaPosition == 0) {
             System.out.println("MoveAxis: Same position for axis");
@@ -286,22 +278,27 @@ public class ParallelCoordinatesChart extends HighDimensionalChart {
 
         for (ParallelCoordinatesAxis axis : axes.values()) {
             int axisIndex = axis.getAxisIndex();
-
             if (deltaPosition > 0) {
                 // move pcAxis left, move all others right
-                if (movingAxisIndex < axisIndex && axisIndex <= newIndex) {
+                if (oldIndex < axisIndex && axisIndex <= newIndex) {
                     axis.moveToPosition(axisIndex - 1, axes);
                 }
             } else {
                 // move pcAxis right, move all others right
-                if (movingAxisIndex > axisIndex && axisIndex >= newIndex) {
+                if (oldIndex > axisIndex && axisIndex >= newIndex) {
                     axis.moveToPosition(axisIndex + 1, axes);
                 }
             }
         }
+        currAxis.moveToPosition(newIndex, axes);
 
-        pcAxis.moveToPosition(newIndex, axes);
+        // refreshUI
+        removeAxesFromChartChildren();
+        bindAxes();
+        redrawAllSeries();
+        reorder();
     }
+
 
     /**
      * Adds listeners to the given slider to be notified when high and low values change.
@@ -482,11 +479,26 @@ public class ParallelCoordinatesChart extends HighDimensionalChart {
     /**
      * Returns the axis specified by the given axis id (null if it cannot be found).
      *
-     * @param axisId the index of the axis
-     * @return the axis or null
+     * @param axisId the id of the axis
+     * @return the axis with the given id or null if no axis found
      */
     private ParallelCoordinatesAxis getAxisById(int axisId) {
         return axes.get(axisId);
+    }
+
+    /**
+     * Returns the axis specified by the given axis id (null if it cannot be found).
+     *
+     * @param axisIndex the index of the axis which should be solved
+     * @return the axis with the given index or null if no axis found
+     */
+    private ParallelCoordinatesAxis getAxisByIndex(int axisIndex) {
+        for (ParallelCoordinatesAxis axis : axes.values()) {
+            if (axis.getAxisIndex() == axisIndex) {
+                return axis;
+            }
+        }
+        return null;
     }
 
     /**
@@ -947,8 +959,7 @@ public class ParallelCoordinatesChart extends HighDimensionalChart {
         HBox box = null;
         Label labelNode = null;
 
-        for (int curr = 0; curr < series.size(); curr++)
-        {
+        for (int curr = 0; curr < series.size(); curr++) {
             path = new Path();
 
             labelNode = new Label(series.get(curr).getName());
