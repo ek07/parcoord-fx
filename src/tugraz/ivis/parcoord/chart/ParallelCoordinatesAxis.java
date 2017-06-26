@@ -1,12 +1,17 @@
 package tugraz.ivis.parcoord.chart;
 
 import javafx.beans.value.ChangeListener;
+import javafx.geometry.Insets;
 import javafx.scene.chart.NumberAxis;
 import javafx.scene.control.Button;
 import javafx.scene.input.ClipboardContent;
 import javafx.scene.input.Dragboard;
 import javafx.scene.input.TransferMode;
+import javafx.scene.layout.Background;
+import javafx.scene.layout.BackgroundFill;
+import javafx.scene.layout.CornerRadii;
 import javafx.scene.layout.HBox;
+import javafx.scene.paint.Color;
 import org.controlsfx.control.RangeSlider;
 
 import java.util.Map;
@@ -71,7 +76,7 @@ public class ParallelCoordinatesAxis {
         setTickLabelFormatter();
     }
 
-    public void registerDragAndDropListener(ParallelCoordinatesChart chart) {
+    public void registerDragAndDropListener(ParallelCoordinatesChart chart, ParallelCoordinatesChart.AxisSeparatorLabel labelDragAndDrop) {
         filterSlider.setOnDragDetected(event -> {
             /* drag was detected, start a drag-and-drop gesture*/
             /* allow any transfer mode */
@@ -83,6 +88,7 @@ public class ParallelCoordinatesAxis {
             db.setContent(content);
             System.out.println("drag started from:" + axisIndex);
 
+            highlightAxis(true);
             event.consume();
         });
 
@@ -98,6 +104,25 @@ public class ParallelCoordinatesAxis {
             event.consume();
         });
 
+
+        filterSlider.setOnDragEntered(event -> {
+            axis.setBackground(new Background(new BackgroundFill(Color.BLUE, CornerRadii.EMPTY, Insets.EMPTY)));
+        });
+
+        filterSlider.setOnDragExited(event -> {
+            String oldAxisAsString = event.getDragboard().getString();
+            if (event.getDragboard().hasString() && oldAxisAsString != null) {
+                System.out.println("drag dropped at:" + axisIndex + " from " + oldAxisAsString);
+
+                int oldAxisIndex = Integer.parseInt(oldAxisAsString);
+                if (oldAxisIndex != axisIndex) {
+                    chart.getAxisByIndex(oldAxisIndex).highlightAxis(false);
+                }
+            }
+
+            event.consume();
+        });
+
         filterSlider.setOnDragDropped(event -> {
             /* data dropped */
             /* if there is a string data on dragboard, read it and use it */
@@ -107,8 +132,72 @@ public class ParallelCoordinatesAxis {
                 success = true;
                 System.out.println("drag dropped at:" + axisIndex + " from " + oldAxisAsString);
 
-                chart.swapAxes(Integer.parseInt(oldAxisAsString), axisIndex);
+                int oldAxisIndex = Integer.parseInt(oldAxisAsString);
+                if (oldAxisIndex != axisIndex) {
+                    chart.swapAxes(oldAxisIndex, axisIndex);
+                }
+
+                chart.getAxisByIndex(oldAxisIndex).highlightAxis(false);
             }
+            highlightAxis(false);
+
+            /* let the source know whether the string was successfully
+             * transferred and used */
+            event.setDropCompleted(success);
+            event.consume();
+        });
+
+        labelDragAndDrop.setOnDragOver(event -> {
+            /* data is dragged over the target */
+            /* if it has a string data */
+            if (event.getDragboard().hasString()) {
+                /* allow for both copying and moving, whatever user chooses */
+                event.acceptTransferModes(TransferMode.MOVE);
+            }
+
+            event.consume();
+        });
+
+        labelDragAndDrop.setOnDragEntered(event -> {
+            labelDragAndDrop.show(true);
+        });
+
+        labelDragAndDrop.setOnDragExited(event -> {
+            labelDragAndDrop.show(false);
+        });
+
+
+        labelDragAndDrop.setOnDragDropped(event -> {
+          /* data dropped */
+            /* if there is a string data on dragboard, read it and use it */
+            boolean success = false;
+            String oldAxisAsString = event.getDragboard().getString();
+            if (event.getDragboard().hasString() && oldAxisAsString != null) {
+                success = true;
+                //System.out.println("drag dropped between:" + labelDragAndDrop.getAxisLeft() + " and " + labelDragAndDrop.getAxisRight());
+
+                int oldIndex = Integer.parseInt(oldAxisAsString);
+
+                ParallelCoordinatesAxis axisRight = labelDragAndDrop.getAxisRight();
+                int newIndex;
+                if (axisRight != null) {
+                    newIndex = axisRight.getAxisIndex();
+                    if (oldIndex < newIndex) {
+                        newIndex--;
+                    }
+                } else {
+                    newIndex = chart.getAxisByIndex(chart.getAttributeCount() - 1).getAxisIndex();
+                }
+
+                if (newIndex != oldIndex) {
+                    chart.moveAxis(oldIndex, newIndex);
+                }
+
+                chart.getAxisByIndex(oldIndex).highlightAxis(false);
+                labelDragAndDrop.show(false);
+            }
+
+
             /* let the source know whether the string was successfully
              * transferred and used */
             event.setDropCompleted(success);
@@ -269,4 +358,14 @@ public class ParallelCoordinatesAxis {
         setAxisIndex(newPos);
     }
 
+    public void highlightAxis(boolean axisHighlighted) {
+        Background background = null;
+
+        if (axisHighlighted) {
+            background = new Background(new BackgroundFill(Color.BLUE, CornerRadii.EMPTY, Insets.EMPTY));
+        }
+
+        // has to be done this way, not via opacity!
+        axis.setBackground(background);
+    }
 }
