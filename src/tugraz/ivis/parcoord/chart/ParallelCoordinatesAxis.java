@@ -102,12 +102,12 @@ public class ParallelCoordinatesAxis {
             /* data dropped */
             /* if there is a string data on dragboard, read it and use it */
             boolean success = false;
-            if (event.getDragboard().hasString()) {
+            String oldAxisAsString = event.getDragboard().getString();
+            if (event.getDragboard().hasString() && oldAxisAsString != null) {
                 success = true;
-                String newIndexAsString = event.getDragboard().getString();
-                System.out.println("drag dropped at:" + axisIndex + " from " + newIndexAsString);
+                System.out.println("drag dropped at:" + axisIndex + " from " + oldAxisAsString);
 
-                chart.moveAxis(axisIndex, Integer.parseInt(newIndexAsString));
+                chart.swapAxes(Integer.parseInt(oldAxisAsString), axisIndex);
             }
             /* let the source know whether the string was successfully
              * transferred and used */

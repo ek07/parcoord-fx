@@ -4,6 +4,7 @@ import javafx.beans.binding.DoubleBinding;
 import javafx.beans.property.DoubleProperty;
 import javafx.beans.value.ChangeListener;
 import javafx.beans.value.ObservableValue;
+import javafx.event.EventHandler;
 import javafx.geometry.Orientation;
 import javafx.geometry.Pos;
 import javafx.geometry.Side;
@@ -145,8 +146,8 @@ public class ParallelCoordinatesChart extends HighDimensionalChart {
             btnInvert.setGraphic(new ImageView(btnInvertImg));
             DoubleBinding invertBtnPosition = trueAxisSeparation.subtract(btnInvert.widthProperty().divide(2));
             btnInvert.translateXProperty().bind(invertBtnPosition);
-            buttonPane.getChildren().add(btnInvert);
 
+            buttonPane.getChildren().add(btnInvert);
             Button btnRight = new Button();
             btnRight.setGraphic(new ImageView(btnRightImg));
             btnRight.translateXProperty().bind(invertBtnPosition.add(btnInvert.widthProperty()));
@@ -210,6 +211,13 @@ public class ParallelCoordinatesChart extends HighDimensionalChart {
                 vSlider.lookup(".range-slider .range-bar").setDisable(true);
                 vSlider.lookup(".range-slider .low-thumb").setStyle("-fx-shape: \"M150 0 L75 200 L225 200 Z\"; -fx-scale-y: 0.5; -fx-translate-y: 5; -fx-scale-x:1.3;");
                 vSlider.lookup(".range-slider .high-thumb").setStyle("-fx-shape: \"M75 0 L225 0 L150 200 Z\"; -fx-scale-y: 0.5; -fx-translate-y: -5; -fx-scale-x:1.3;");
+
+                vSlider.setOnMouseClicked(new EventHandler<MouseEvent>() {
+                    @Override
+                    public void handle(MouseEvent mouseEvent) {
+                        mouseEvent.consume();
+                    }
+                });
             }
 
             btnInvert.setOnAction(event -> {
@@ -278,15 +286,17 @@ public class ParallelCoordinatesChart extends HighDimensionalChart {
 
         for (ParallelCoordinatesAxis axis : axes.values()) {
             int axisIndex = axis.getAxisIndex();
-            if (deltaPosition > 0) {
-                // move pcAxis left, move all others right
-                if (oldIndex < axisIndex && axisIndex <= newIndex) {
-                    axis.moveToPosition(axisIndex - 1, axes);
-                }
-            } else {
-                // move pcAxis right, move all others right
-                if (oldIndex > axisIndex && axisIndex >= newIndex) {
-                    axis.moveToPosition(axisIndex + 1, axes);
+            if (currAxis.getAxisIndex() != axisIndex) {
+                if (deltaPosition > 0) {
+                    // move pcAxis left, move all others right
+                    if (oldIndex < axisIndex && axisIndex <= newIndex) {
+                        axis.moveToPosition(axisIndex - 1, axes);
+                    }
+                } else {
+                    // move pcAxis right, move all others right
+                    if (oldIndex > axisIndex && axisIndex >= newIndex) {
+                        axis.moveToPosition(axisIndex + 1, axes);
+                    }
                 }
             }
         }
@@ -299,14 +309,31 @@ public class ParallelCoordinatesChart extends HighDimensionalChart {
         reorder();
     }
 
+    /**
+     * Swaps the position of the given axes given axes to the correct position and repositions the other ones
+     * TODO moveAxes: in the future, this should be replaced by something better performing (or be doing more)
+     */
+    public void swapAxes(int oldIndex, int newIndex) {
+        int deltaPosition = newIndex - oldIndex;
+        ParallelCoordinatesAxis currAxis = getAxisByIndex(oldIndex);
+        ParallelCoordinatesAxis swapAxis = getAxisByIndex(newIndex);
+        currAxis.moveToPosition(newIndex, axes);
+        swapAxis.moveToPosition(oldIndex, axes);
+
+        // refreshUI
+        removeAxesFromChartChildren();
+        bindAxes();
+        redrawAllSeries();
+        reorder();
+    }
 
     /**
      * Adds listeners to the given slider to be notified when high and low values change.
      *
      * @param slider the slider to add listeners to
      */
-    private void addFilterListeners(RangeSlider slider) {
 
+    private void addFilterListeners(RangeSlider slider) {
         ChangeListener<Number> highListener = new ChangeListener<Number>() {
             @Override
             public void changed(ObservableValue<? extends Number> ov, Number oldVal, Number newVal) {
