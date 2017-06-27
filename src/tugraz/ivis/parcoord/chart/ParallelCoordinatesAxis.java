@@ -76,7 +76,7 @@ public class ParallelCoordinatesAxis {
         setTickLabelFormatter();
     }
 
-    public void registerDragAndDropListener(ParallelCoordinatesChart chart, ParallelCoordinatesChart.AxisSeparatorLabel labelDragAndDrop) {
+    public void registerDragAndDropListener(ParallelCoordinatesChart chart, ParallelCoordinatesChart.DragAndDropLabel labelDragAndDrop) {
         /* === set filter slider drag and drops === */
         filterSlider.setOnDragDetected(event -> {
             /* drag was detected, start a drag-and-drop gesture*/
@@ -362,6 +362,11 @@ public class ParallelCoordinatesAxis {
         setAxisIndex(newPos);
     }
 
+    /**
+     * Highlights the given axis using a background color
+     *
+     * @param axisHighlighted
+     */
     public void highlightAxis(boolean axisHighlighted) {
         Background background = null;
 

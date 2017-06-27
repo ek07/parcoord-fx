@@ -87,7 +87,7 @@ public class ParallelCoordinatesChart extends HighDimensionalChart {
      * Reorders elements in the z dimensions to push certain elements to the front.
      */
     protected void reorder() {
-        // for (AxisSeparatorLabel label : pane) {
+        // for (DragAndDropLabel label : pane) {
         paneControls.toFront();
         // }
 
@@ -257,7 +257,7 @@ public class ParallelCoordinatesChart extends HighDimensionalChart {
 
     private void registerDragAndDropListeners(ParallelCoordinatesAxis pcAxis, Pane buttonPane, DoubleBinding trueAxisSeparation, DoubleProperty yProperty) {
         int rightIndex = pcAxis == null ? -1 : pcAxis.getAxisIndex();
-        AxisSeparatorLabel labelDragAndDrop = new AxisSeparatorLabel(new Background(new BackgroundFill(Color.BLUE, CornerRadii.EMPTY, Insets.EMPTY)));
+        DragAndDropLabel labelDragAndDrop = new DragAndDropLabel(new Background(new BackgroundFill(Color.BLUE, CornerRadii.EMPTY, Insets.EMPTY)));
         DoubleBinding axisSeparation = getAxisSeparationBinding();
         labelDragAndDrop.prefWidthProperty().bind(axisSeparation);
         labelDragAndDrop.prefHeightProperty().bind(innerHeightProperty());
@@ -1043,15 +1043,35 @@ public class ParallelCoordinatesChart extends HighDimensionalChart {
         }
     }
 
-    public class AxisSeparatorLabel extends Label {
+
+    /**
+     * helper class which defines the space between the axis which can be used to drag and drop them to the according
+     * position
+     */
+    public class DragAndDropLabel extends Label {
+        /**
+         * the right axis defining this drag and drop label
+         */
         private ParallelCoordinatesAxis axisRight;
 
-        AxisSeparatorLabel(Background fill, ParallelCoordinatesAxis axisRight) {
+        /**
+         * basic constructor which sets the opacity to 0 and alignment to CENTER while also setting the background and
+         * the right axis
+         *
+         * @param fill      the background fill which will be set to the label
+         * @param axisRight the right axis defining this drag and drop label
+         */
+        DragAndDropLabel(Background fill, ParallelCoordinatesAxis axisRight) {
             this(fill);
             this.axisRight = axisRight;
         }
 
-        AxisSeparatorLabel(Background fill) {
+        /**
+         * basic constructor which sets the opacity to 0 and alignment to CENTER while also setting the background
+         *
+         * @param fill the background fill which will be set to the label
+         */
+        DragAndDropLabel(Background fill) {
             super();
 
             setBackground(fill);
@@ -1063,6 +1083,11 @@ public class ParallelCoordinatesChart extends HighDimensionalChart {
             return axisRight;
         }
 
+        /**
+         * sets the drag and drop area visible or invisible using the opacity
+         *
+         * @param visible
+         */
         public void show(boolean visible) {
             double opacity = visible ? 0.05 : 0.0;
             setOpacity(opacity);
