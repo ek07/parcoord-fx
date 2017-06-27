@@ -4,6 +4,7 @@ import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
 import javafx.scene.control.Alert;
+import javafx.scene.control.RadioMenuItem;
 import javafx.scene.layout.AnchorPane;
 import javafx.scene.paint.Color;
 import javafx.stage.FileChooser;
@@ -24,7 +25,9 @@ public class Controller implements Initializable {
     @FXML
     private AnchorPane anchorPane;
     @FXML
-    private ParallelCoordinatesChart parcoordChart;
+    private ParallelCoordinatesChart parcoordChart = null;
+
+    @FXML RadioMenuItem toggle_legend;
 
     // === other helper params
     private Stage stage;
@@ -60,6 +63,12 @@ public class Controller implements Initializable {
                 parcoordChart.setTitle("loading ...");
             */
             importDataFromFile(file.getAbsolutePath());
+
+
+
+
+
+
             parcoordChart.setTitle(file.getName());
         }
     }
@@ -134,16 +143,26 @@ public class Controller implements Initializable {
         parcoordChart.setHighlightColor(Color.BLACK);
         parcoordChart.setHighlightStrokeWidth(3);
 
+        toggle_legend.setDisable(false);
+
         parcoordChart.drawLegend();
     }
 
     //TODO: this is just a "hack" for testing
     public void initTestGraphData() {
         // TODO: hardcoded path because its simply quicker for now
-        DataModel dm = new DataModel("/home/thorsten/Uni/master/Sem3/InfoVis/Ass3/parcoord-fx/src/data/auto3.csv", ";", true);
+        DataModel dm = new DataModel("C:\\Users\\Helmut\\Documents\\GitHub\\parcoord-fx\\src\\data\\auto3.csv", ";", true);
+        //DataModel dm = new DataModel("/home/thorsten/Uni/master/Sem3/InfoVis/Ass3/parcoord-fx/src/data/auto3.csv", ";", true);
         //new DataModel("C:\\Users\\mchegini\\Documents\\NetBeansProjects\\PaCoPlot\\parcoord-fx\\src\\data\\auto3.csv", ";", true);
         //DataModel dm = new DataModel("C:\\Users\\Thomas\\Documents\\Uni\\10. Semester\\ivis\\project\\parcoord-fx\\src\\data\\auto3.csv", ";", true);
         setDataModelToGraph(dm);
         parcoordChart.enableBrushing();
+    }
+
+    public void toggleLegend(ActionEvent actionEvent) {
+        if(parcoordChart != null)
+        {
+            parcoordChart.toggleShowLegend();
+        }
     }
 }

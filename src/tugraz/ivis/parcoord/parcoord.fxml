@@ -18,16 +18,17 @@
                                 <MenuItem fx:id="open" mnemonicParsing="false" onAction="#onFileOpen" text="Open..."/>
                             </items>
                         </Menu>
-                        <Menu mnemonicParsing="false" text="Help">
-                            <items>
-                                <MenuItem mnemonicParsing="false" onAction="#onShowInfo" text="About"/>
-                            </items>
-                        </Menu>
                         <Menu mnemonicParsing="false" text="Chart">
                             <items>
                                 <MenuItem mnemonicParsing="false" onAction="#onResetBrushing" text="Reset brushing"/>
+                                <RadioMenuItem fx:id="toggle_legend" disable="true" text="Legend" selected="true" onAction="#toggleLegend"/>
                             </items>
                         </Menu>
+                        <Menu mnemonicParsing="false" text="Help">
+                        <items>
+                            <MenuItem mnemonicParsing="false" onAction="#onShowInfo" text="About"/>
+                        </items>
+                    </Menu>
                     </menus>
                 </MenuBar>
             </top>

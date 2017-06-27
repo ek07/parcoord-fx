@@ -38,6 +38,7 @@ public class ParallelCoordinatesChart extends HighDimensionalChart {
 
     private double pathStrokeWidth = 1.0;
 
+    private int show_legend = 1;
     private double legend_height_relative = 0.1;
 
     private boolean useHighlighting = true;
@@ -209,7 +210,7 @@ public class ParallelCoordinatesChart extends HighDimensionalChart {
             numberAxis.translateXProperty().bind(trueAxisSeparation);
             DoubleBinding heightButton = btnInvert.heightProperty().add(BUTTON_MARGIN);
             numberAxis.translateYProperty().bind(heightButton);
-            DoubleBinding innerHeightWithoutButton = innerHeightProperty().subtract(heightButton).multiply(1 - legend_height_relative);
+            DoubleBinding innerHeightWithoutButton = innerHeightProperty().subtract(heightButton).multiply(1 - legend_height_relative * show_legend);
             numberAxis.tickUnitProperty().bind(
                     innerHeightWithoutButton.divide(innerHeightWithoutButton).divide(innerHeightWithoutButton)
                             .multiply(spaceBetweenTicks).multiply(delta));
@@ -225,7 +226,7 @@ public class ParallelCoordinatesChart extends HighDimensionalChart {
                 labelNode.setAlignment(Pos.CENTER);
                 box = new HBox(labelNode);
                 box.translateXProperty().bind(trueAxisSeparation.subtract(labelMinWidth / 2));
-                box.translateYProperty().bind(innerHeightProperty.subtract(labelYOffset).multiply(1 - legend_height_relative * .85));
+                box.translateYProperty().bind(innerHeightProperty.subtract(labelYOffset).multiply(1 - legend_height_relative * show_legend * .85));
 
                 getChartChildren().add(box);
             }
@@ -601,10 +602,10 @@ public class ParallelCoordinatesChart extends HighDimensionalChart {
     protected void resizeAxes() {
         for (ParallelCoordinatesAxis axis : axes.values()) {
             double buttonHeight = getButtonPaneOffset();
-            axis.getAxis().resize(1.0, (innerHeightProperty.doubleValue() - buttonHeight) * (1 - legend_height_relative));
+            axis.getAxis().resize(1.0, (innerHeightProperty.doubleValue() - buttonHeight) * (1 - legend_height_relative * show_legend));
 
             if (axis.getFilterSlider() != null)
-                axis.getFilterSlider().resize(1.0, (innerHeightProperty.doubleValue() - buttonHeight) * (1 - legend_height_relative));
+                axis.getFilterSlider().resize(1.0, (innerHeightProperty.doubleValue() - buttonHeight) * (1 - legend_height_relative * show_legend));
         }
     }
 
@@ -681,7 +682,7 @@ public class ParallelCoordinatesChart extends HighDimensionalChart {
 
         double yStartAxes = getButtonPaneOffset(); // starting point of axes
         DoubleBinding axisSeparation = getAxisSeparationBinding();
-        DoubleBinding heightProp = innerHeightProperty().subtract(yStartAxes).multiply(1 - legend_height_relative);
+        DoubleBinding heightProp = innerHeightProperty().subtract(yStartAxes).multiply(1 - legend_height_relative * show_legend);
 
         Double valueStart;
         Double valueEnd;
@@ -1110,76 +1111,90 @@ public class ParallelCoordinatesChart extends HighDimensionalChart {
 
 
     public void drawLegend() {
+        if(show_legend == 1) {
 
-        DoubleBinding legendSeparation = innerWidthProperty().divide(series.size() + 1);
-        DoubleBinding heightProp = innerHeightProperty().multiply(1);
-        DoubleBinding widthProp = innerWidthProperty().multiply(1);
+            DoubleBinding legendSeparation = innerWidthProperty().divide(series.size() + 1);
+            DoubleBinding heightProp = innerHeightProperty().multiply(1);
+            DoubleBinding widthProp = innerWidthProperty().multiply(1);
 
-        DoubleBinding heightPropLegendBorder = innerHeightProperty().multiply(1 - legend_height_relative / 2);
-        DoubleBinding heightPropLegend = innerHeightProperty().multiply(1 - legend_height_relative / 4);
+            DoubleBinding heightPropLegendBorder = innerHeightProperty().multiply(1 - legend_height_relative / 2);
+            DoubleBinding heightPropLegend = innerHeightProperty().multiply(1 - legend_height_relative / 4);
 
 
-        Path path = new Path();
+            Path path = new Path();
 
-        MoveTo moveTo = new MoveTo();
-        moveTo.setX(0);
-        moveTo.yProperty().bind(heightPropLegendBorder);
-        path.getElements().add(moveTo);
-
-        LineTo lineTo = new LineTo();
-        lineTo.xProperty().bind(widthProp);
-        lineTo.yProperty().bind(heightPropLegendBorder);
-        path.getElements().add(lineTo);
-
-        lineTo = new LineTo();
-        lineTo.xProperty().bind(widthProp);
-        lineTo.yProperty().bind(heightProp);
-        path.getElements().add(lineTo);
-
-        lineTo = new LineTo();
-        lineTo.setX(0);
-        lineTo.yProperty().bind(heightProp);
-        path.getElements().add(lineTo);
-
-        lineTo = new LineTo();
-        lineTo.setX(0);
-        lineTo.yProperty().bind(heightPropLegendBorder);
-        path.getElements().add(lineTo);
-
-        getChartChildren().add(path);
-
-        HBox box = null;
-        Label labelNode = null;
-
-        for (int curr = 0; curr < series.size(); curr++) {
-            path = new Path();
-
-            labelNode = new Label(series.get(curr).getName());
-            labelNode.setMinWidth(100);
-            labelNode.setAlignment(Pos.CENTER_LEFT);
-
-            box = new HBox(labelNode);
-            box.setAlignment(Pos.CENTER_LEFT);
-            box.translateXProperty().bind(legendSeparation.multiply(curr + 1));
-            box.translateYProperty().bind(heightPropLegend);
-
-            getChartChildren().add(box);
-
-            moveTo = new MoveTo();
-            moveTo.xProperty().bind(legendSeparation.multiply(curr + 1).subtract(5));
-            moveTo.yProperty().bind(heightPropLegend);
+            MoveTo moveTo = new MoveTo();
+            moveTo.setX(0);
+            moveTo.yProperty().bind(heightPropLegendBorder);
             path.getElements().add(moveTo);
 
-            lineTo = new LineTo();
-            lineTo.xProperty().bind(legendSeparation.multiply(curr + 1).subtract(20));
-            lineTo.yProperty().bind(heightPropLegend);
+            LineTo lineTo = new LineTo();
+            lineTo.xProperty().bind(widthProp);
+            lineTo.yProperty().bind(heightPropLegendBorder);
             path.getElements().add(lineTo);
 
-            path.setStrokeWidth(2);
-            path.setStroke(series.get(curr).getColor());
+            lineTo = new LineTo();
+            lineTo.xProperty().bind(widthProp);
+            lineTo.yProperty().bind(heightProp);
+            path.getElements().add(lineTo);
+
+            lineTo = new LineTo();
+            lineTo.setX(0);
+            lineTo.yProperty().bind(heightProp);
+            path.getElements().add(lineTo);
+
+            lineTo = new LineTo();
+            lineTo.setX(0);
+            lineTo.yProperty().bind(heightPropLegendBorder);
+            path.getElements().add(lineTo);
 
             getChartChildren().add(path);
+
+            HBox box = null;
+            Label labelNode = null;
+
+            for (int curr = 0; curr < series.size(); curr++) {
+                path = new Path();
+
+                labelNode = new Label(series.get(curr).getName());
+                labelNode.setMinWidth(100);
+                labelNode.setAlignment(Pos.CENTER_LEFT);
+
+                box = new HBox(labelNode);
+                box.setAlignment(Pos.CENTER_LEFT);
+                box.translateXProperty().bind(legendSeparation.multiply(curr + 1));
+                box.translateYProperty().bind(heightPropLegend);
+
+                getChartChildren().add(box);
+
+                moveTo = new MoveTo();
+                moveTo.xProperty().bind(legendSeparation.multiply(curr + 1).subtract(5));
+                moveTo.yProperty().bind(heightPropLegend);
+                path.getElements().add(moveTo);
+
+                lineTo = new LineTo();
+                lineTo.xProperty().bind(legendSeparation.multiply(curr + 1).subtract(20));
+                lineTo.yProperty().bind(heightPropLegend);
+                path.getElements().add(lineTo);
+
+                path.setStrokeWidth(2);
+                path.setStroke(series.get(curr).getColor());
+
+                getChartChildren().add(path);
+            }
         }
+    }
+
+    public void toggleShowLegend() {
+        if (series == null)
+            return;
+
+        getChartChildren().clear();
+        show_legend = 1 - show_legend;
+        updateChartForNewSeries();
+        updateBounds();
+        bindAxes();
+        drawLegend();
     }
 
 
