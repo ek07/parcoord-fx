@@ -122,6 +122,10 @@ public class ParallelCoordinatesChart extends HighDimensionalChart {
 
         List<MinMaxPair> minMax = getMinMaxValues();
 
+        if (paneControls != null) {
+            getChartChildren().remove(paneControls);
+        }
+
         paneControls = new Pane();
         getChartChildren().add(paneControls);
         Image btnInvertImg = new Image("resources/invert_1x.png", 17, 17, true, true);
@@ -236,16 +240,16 @@ public class ParallelCoordinatesChart extends HighDimensionalChart {
                 // redraws everything by hard right now
                 // TODO moveAxes: in the future, this should be replaced by something better performing
                 int newIndex = pcAxis.getAxisIndex() == (numAxes - 1) ? 0 : pcAxis.getAxisIndex() + 1;
+                //getChartChildren().remove(paneControls);
                 moveAxis(pcAxis.getAxisIndex(), newIndex);
-                getChartChildren().remove(paneControls);
             });
 
             btnLeft.setOnAction(event -> {
                 // redraws everything by hard right now
                 // TODO moveAxes: in the future, this should be replaced by something better performing
                 int newIndex = pcAxis.getAxisIndex() == 0 ? numAxes - 1 : pcAxis.getAxisIndex() - 1;
+                //getChartChildren().remove(paneControls);
                 moveAxis(pcAxis.getAxisIndex(), newIndex);
-                getChartChildren().remove(paneControls);
             });
 
             pcAxis.initialize(numberAxis, label, box, vSlider, btnInvert, btnLeft, btnRight);
@@ -257,7 +261,6 @@ public class ParallelCoordinatesChart extends HighDimensionalChart {
     }
 
     private void registerDragAndDropListeners(ParallelCoordinatesAxis pcAxis, Pane buttonPane, DoubleBinding trueAxisSeparation, DoubleProperty yProperty) {
-        int rightIndex = pcAxis == null ? -1 : pcAxis.getAxisIndex();
         DragAndDropLabel labelDragAndDrop = new DragAndDropLabel(new Background(new BackgroundFill(Color.BLUE, CornerRadii.EMPTY, Insets.EMPTY)));
         DoubleBinding axisSeparation = getAxisSeparationBinding();
         labelDragAndDrop.prefWidthProperty().bind(axisSeparation);
