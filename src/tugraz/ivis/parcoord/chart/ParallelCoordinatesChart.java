@@ -10,6 +10,8 @@ import javafx.geometry.Orientation;
 import javafx.geometry.Pos;
 import javafx.geometry.Side;
 import javafx.scene.CacheHint;
+import javafx.scene.canvas.Canvas;
+import javafx.scene.canvas.GraphicsContext;
 import javafx.scene.chart.NumberAxis;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
@@ -55,6 +57,9 @@ public class ParallelCoordinatesChart extends HighDimensionalChart {
     private long lastFilterHandle = 0;
     private final static long FILTER_FREQUENCY = 100; // handle filter changes every x milliseconds
     public Pane paneControls;
+    public Canvas canvas;
+    private int width;
+    private int height;
 
     /**
      * Default constructor needed for FXML
@@ -621,7 +626,12 @@ public class ParallelCoordinatesChart extends HighDimensionalChart {
     @Override
     protected void layoutChartChildren(double top, double left, double width, double height) {
         super.layoutChartChildren(top, left, width, height);
-        resizeAxes();
+        if ((int) width != this.width || (int) height != this.height) {
+            this.height = (int) height;
+            this.width = (int) width;
+            resizeAxes();
+            redrawAllSeries();
+        }
     }
 
     /**
@@ -629,9 +639,100 @@ public class ParallelCoordinatesChart extends HighDimensionalChart {
      *
      * @param s the series which the chart adds and binds to its content
      */
-    @Override
     protected void bindSeries(Series s) {
         // easier and more performant to simply sort the axes right away instead of crawling the map
+        List<ParallelCoordinatesAxis> axesSorted = getAxesInOrder();
+
+        DoubleProperty yStartAxes = axes.get(0).getAxis().translateYProperty(); // starting point of axes
+        DoubleBinding axisSeparation = getAxisSeparationBinding();
+        DoubleBinding heightProp = innerHeightProperty().subtract(yStartAxes).multiply(1 - legend_height_relative);
+
+        Double valueStart;
+        Double valueEnd;
+        Object dataPointStart;
+        Object dataPointEnd;
+        //int numRecords = s.getRecords().size();
+        int numColumns = getAttributeCount();
+        //System.out.println("cols:" + numColumns + "records" + numRecords);
+        getChartChildren().remove(canvas);
+        canvas = new Canvas();
+        getChartChildren().add(canvas);
+        //canvas.translateYProperty().bind(yStartAxes);
+        canvas.heightProperty().bind(innerHeightProperty());//innerWidthProperty().doubleValue(), innerHeightProperty().doubleValue());
+        canvas.widthProperty().bind(innerWidthProperty());
+        canvas.setCache(true);
+        canvas.setCacheHint(CacheHint.SPEED);
+        canvas.toBack();
+        GraphicsContext gc = canvas.getGraphicsContext2D();
+        gc.setStroke(Color.BLUE);
+        gc.setLineWidth(1);
+
+        for (Record record : s.getRecords()) {
+            gc.beginPath();
+            Path shadowPath = new Path();
+            for (int curr = 1; curr < numColumns; curr++) {
+                ParallelCoordinatesAxis beforeAxis = axesSorted.get(curr - 1);
+                ParallelCoordinatesAxis currAxis = axesSorted.get(curr);
+                dataPointStart = record.getAttByIndex(beforeAxis.getId());
+                dataPointEnd = record.getAttByIndex(currAxis.getId());
+
+                valueStart = (Double) dataPointStart;
+                valueEnd = (Double) dataPointEnd;
+
+                // for first data point, use moveto not lineto
+                // this has to be refactored when moving axes
+                //    System.out.println("curr " + curr + " before " + (curr - 1));
+                if (dataPointEnd != null && dataPointStart != null) {
+                    Double[] coordinates = new Double[]{
+                            axisSeparation.multiply(curr).doubleValue(), getValueOnAxis(yStartAxes, heightProp, valueStart, beforeAxis).doubleValue(),
+                            axisSeparation.add(axisSeparation.multiply(curr)).doubleValue(), getValueOnAxis(yStartAxes, heightProp, valueEnd, currAxis).doubleValue()
+                    };
+                    gc.strokeLine(coordinates[0], coordinates[1], coordinates[2], coordinates[3]);
+
+                    if (curr - 1 == 0) {
+                        MoveTo moveTo = new MoveTo();
+                        moveTo.setX(coordinates[0]);
+                        moveTo.setY(coordinates[1]);
+                        shadowPath.getElements().add(moveTo);
+                    } else {
+                        LineTo lineTo = new LineTo();
+                        lineTo.setX(coordinates[0]);
+                        lineTo.setY(coordinates[1]);
+                        shadowPath.getElements().add(lineTo);
+                    }
+
+                    LineTo lineTo = new LineTo();
+                    lineTo.setX(coordinates[2]);
+                    lineTo.setY(coordinates[3]);
+                    shadowPath.getElements().add(lineTo);
+                }
+            }
+
+            //handled by record.drawByStatus()
+            shadowPath.setStroke(s.getColor());
+            shadowPath.setOpacity(s.getOpacity());
+            shadowPath.setStrokeWidth(pathStrokeWidth);
+
+            if (useHighlighting)
+                setupHighlightingEvents(shadowPath);
+
+            record.setPath(shadowPath);
+            record.drawByStatus(this);
+            shadowPath.getProperties().put("record", record);
+            shadowPath.setCache(true);
+            shadowPath.setCacheHint(CacheHint.SPEED);
+            getChartChildren().add(shadowPath);
+            shadowPath.toFront();
+        }
+    }
+
+    /**
+     * Binds a given series to the chart content, and adds it to its chartChildren
+     *
+     * @param s the series which the chart adds and binds to its content
+     */
+    protected void bindSeriesPath(Series s) {
+     /*   // easier and more performant to simply sort the axes right away instead of crawling the map
         List<ParallelCoordinatesAxis> axesSorted = getAxesInOrder();
 
         DoubleProperty yStartAxes = axes.get(0).getAxis().translateYProperty(); // starting point of axes
@@ -687,8 +788,139 @@ public class ParallelCoordinatesChart extends HighDimensionalChart {
             path.setCacheHint(CacheHint.SPEED);
 
             getChartChildren().add(path);
+        }*/
+    }
+
+    /**
+     * Binds a given series to the chart content, and adds it to its chartChildren
+     *
+     * @param s the series which the chart adds and binds to its content
+     */
+    protected void bindSeriesPolyline(Series s) {
+        // easier and more performant to simply sort the axes right away instead of crawling the map
+        List<ParallelCoordinatesAxis> axesSorted = getAxesInOrder();
+
+        DoubleProperty yStartAxes = axes.get(0).getAxis().translateYProperty(); // starting point of axes
+        DoubleBinding axisSeparation = getAxisSeparationBinding();
+        DoubleBinding heightProp = innerHeightProperty().subtract(yStartAxes).multiply(1 - legend_height_relative);
+
+        Double value;
+        Object dataPoint;
+        //int numRecords = s.getRecords().size();
+        int numColumns = getAttributeCount();
+        //System.out.println("cols:" + numColumns + "records" + numRecords);
+        for (Record record : s.getRecords()) {
+            Polyline line = new Polyline();
+            dataPoint = record.getAttByIndex(axesSorted.get(0).getId());
+            value = (Double) dataPoint;
+            // for first data point, use moveto not lineto
+            // this has to be refactored when moving axes
+            line.getPoints().addAll(axisSeparation.doubleValue(), getValueOnAxis(yStartAxes, heightProp, value, axesSorted.get(0)).doubleValue());
+
+
+            for (int curr = 1; curr < numColumns; curr++) {
+                ParallelCoordinatesAxis currAxis = axesSorted.get(curr);
+                dataPoint = record.getAttByIndex(currAxis.getId());
+
+                if (dataPoint instanceof String) {
+                    break;
+                }
+
+                value = (Double) dataPoint;
+                if (value != null) {
+                    line.getPoints().addAll(axisSeparation.add(axisSeparation.multiply(curr)).doubleValue(), getValueOnAxis(yStartAxes, heightProp, value, currAxis).doubleValue());
+                }
+            }
+
+            //handled by record.drawByStatus()
+//            path.setStroke(s.getColor());
+//            path.setOpacity(s.getOpacity());
+//            path.setStrokeWidth(pathStrokeWidth);
+
+            //   if (useHighlighting)
+            //   setupHighlightingEvents(line);
+
+            // TODO change if needed
+
+            //    record.setCanvas(line);
+            record.drawByStatus(this);
+
+            line.getProperties().put("record", record);
+            line.setCache(true);
+            line.setCacheHint(CacheHint.SPEED);
+
+            getChartChildren().add(line);
         }
     }
+
+
+    /**
+     * Binds a given series to the chart content, and adds it to its chartChildren
+     *
+     * @param s the series which the chart adds and binds to its content
+     */
+    protected void bindSeriesSingleLine(Series s) {
+        // easier and more performant to simply sort the axes right away instead of crawling the map
+        List<ParallelCoordinatesAxis> axesSorted = getAxesInOrder();
+
+        DoubleProperty yStartAxes = axes.get(0).getAxis().translateYProperty(); // starting point of axes
+        DoubleBinding axisSeparation = getAxisSeparationBinding();
+        DoubleBinding heightProp = innerHeightProperty().subtract(yStartAxes).multiply(1 - legend_height_relative);
+        Object dataPointStart;
+        Object dataPointEnd;
+        Double valueStart;
+        Double valueEnd;
+        Object dataPoint;
+        //int numRecords = s.getRecords().size();
+        int numColumns = getAttributeCount();
+        //System.out.println("cols:" + numColumns + "records" + numRecords);
+        for (Record record : s.getRecords()) {
+
+
+            for (int curr = 1; curr < numColumns; curr++) {
+                Line line = new Line();
+                ParallelCoordinatesAxis beforeAxis = axesSorted.get(curr - 1);
+                ParallelCoordinatesAxis currAxis = axesSorted.get(curr);
+                dataPointStart = record.getAttByIndex(beforeAxis.getId());
+                dataPointEnd = record.getAttByIndex(currAxis.getId());
+                if (dataPointEnd instanceof String) {
+                    break;
+                }
+                valueStart = (Double) dataPointStart;
+                valueEnd = (Double) dataPointEnd;
+
+                // for first data point, use moveto not lineto
+                // this has to be refactored when moving axes
+                if (valueStart != null && valueEnd != null) {
+                    line.startXProperty().bind(axisSeparation.multiply(curr));
+                    line.startYProperty().bind(getValueOnAxis(yStartAxes, heightProp, valueStart, beforeAxis));
+                    line.endXProperty().bind(axisSeparation.multiply(curr + 1));
+                    line.endYProperty().bind(getValueOnAxis(yStartAxes, heightProp, valueEnd, currAxis));
+                }
+                line.getProperties().put("record", record);
+                line.setCache(true);
+                line.setCacheHint(CacheHint.SPEED);
+
+                getChartChildren().add(line);
+            }
+
+            //handled by record.drawByStatus()
+//            path.setStroke(s.getColor());
+//            path.setOpacity(s.getOpacity());
+//            path.setStrokeWidth(pathStrokeWidth);
+
+            //  if (useHighlighting)
+            //      setupHighlightingEvents(line);
+//
+            // TODO change if needed
+
+            //    record.setCanvas(line);
+            //record.drawByStatus(this);
+
+
+        }
+    }
+
 
     /**
      * Helper method for getting axes in correct display order
@@ -723,7 +955,7 @@ public class ParallelCoordinatesChart extends HighDimensionalChart {
     /**
      * Sets up event handling for the given path.
      *
-     * @param path The path for which events should be handled
+     * @param node The path for which events should be handled
      */
     private void setupHighlightingEvents(Path path) {
 
@@ -733,18 +965,19 @@ public class ParallelCoordinatesChart extends HighDimensionalChart {
             Record record = (Record) src.getProperties().get("record");
 
             // we don't need to handle events for invisible records
-            if (record.isVisible()) {
+            // if (record.isVisible()) {
 
-                // record is already highlighted
-                if (record.getHighlightingStatus() == Status.VISIBLE) {
-                    record.setHighlightingStatus(Status.NONE);
-                } else {
-                    record.setHighlightingStatus(Status.VISIBLE);
-                    record.getPath().toFront();
-                }
-
-                record.drawByStatus(this);
+            // record is already highlighted
+            if (record.getHighlightingStatus() == Status.VISIBLE) {
+                record.setHighlightingStatus(Status.NONE);
+            } else {
+                record.setHighlightingStatus(Status.VISIBLE);
+                record.getPath().toFront();
             }
+
+
+            record.drawByStatus(this);
+            //  }
         });
 
 
@@ -840,8 +1073,8 @@ public class ParallelCoordinatesChart extends HighDimensionalChart {
         for (Series s : series) {
             for (Record r : s.getRecords()) {
                 //skip lines which are not visible
-                if (!r.isVisible())
-                    continue;
+                // if (!r.isVisible())
+                //      continue;
 
                 Shape intersection = Shape.intersect(r.getPath(), brushingRectangle);
                 if (intersection.getBoundsInParent().intersects(getBoundsInLocal())) {
@@ -867,9 +1100,9 @@ public class ParallelCoordinatesChart extends HighDimensionalChart {
                 r.setBrushingStatus(Status.NONE);
                 r.drawByStatus(this);
 //    			if(r.isVisible()) {
-//    				r.getPath().setStroke(s.getColor());
-//    				r.getPath().setOpacity(s.getOpacity());
-//    				r.getPath().setStrokeWidth(pathStrokeWidth);
+//    				r.getPolyline().setStroke(s.getColor());
+//    				r.getPolyline().setOpacity(s.getOpacity());
+//    				r.getPolyline().setStrokeWidth(pathStrokeWidth);
 //    			}
             }
         }

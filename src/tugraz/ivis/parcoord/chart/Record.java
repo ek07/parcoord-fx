@@ -11,13 +11,13 @@ import java.util.List;
  * A single record
  */
 public class Record {
-	
-	public enum Status {
-		VISIBLE,	// indicates that this record is visible
-		OPAQUE,		// indicates that this record is hidden
-		NONE		// indicates that no meaningful status can be applied (should be treated like VISIBLE for drawing)
-	}
-	
+
+    public enum Status {
+        VISIBLE,    // indicates that this record is visible
+        OPAQUE,        // indicates that this record is hidden
+        NONE        // indicates that no meaningful status can be applied (should be treated like VISIBLE for drawing)
+    }
+
     /**
      * TODO: calculate when adding
      * the path for the record
@@ -28,17 +28,17 @@ public class Record {
      * index of the record
      */
     private int index = -1;
-    
+
     /**
      * indicates the current status of the record concerning axisFilters
      */
     private Status axisFilterStatus = Status.VISIBLE;
-    
+
     /**
      * indicates the current status of the record (concerning brushing). Is NONE by default to show that no brushing has affected the record yet.
      */
     private Status brushingStatus = Status.NONE;
-    
+
     /**
      * indicates the current status of the record (concerning highlighting). Is NONE by default to show that no brushing has affected the record yet.
      */
@@ -53,7 +53,7 @@ public class Record {
      * categories of the record
      */
     private ObservableList<String> categories = FXCollections.observableArrayList();
-    
+
     /**
      * the series this record belongs to
      */
@@ -80,49 +80,51 @@ public class Record {
     public Record(int index, List<Object> values) {
         this.index = index;
         this.values.addAll(values);
+        brushingStatus = Status.OPAQUE;
+        axisFilterStatus = Status.OPAQUE;
     }
-    
+
     /**
      * Checks whether a record should be visible according to the statuses it has been assigned.
-     * 
+     *
      * @return true if it should be visible, false otherwise
      */
     public boolean isVisible() {
-    	return !(axisFilterStatus == Status.OPAQUE || brushingStatus == Status.OPAQUE);
+        return !(axisFilterStatus == Status.OPAQUE && brushingStatus == Status.OPAQUE);
     }
-    
+
     /**
      * Sets opacity, stroke and strokeWidth for the Path of this record according to the
      * various statuses this record has.
-     * 
-     * @param chart	The chart the record is contained in
+     *
+     * @param chart The chart the record is contained in
      */
     public void drawByStatus(ParallelCoordinatesChart chart) {
-    	drawByStatus(chart, false);
+        drawByStatus(chart, false);
     }
-    
+
     /**
      * Sets opacity, stroke and strokeWidth for the Path of this record according to the
      * various statuses this record has.
-     * 
-     * @param chart			The chart the record is contained in
-     * @param tempHighlight	Whether highlighting is temporal and should be drawn regardless
-     * 						of highlighting Status
+     *
+     * @param chart         The chart the record is contained in
+     * @param tempHighlight Whether highlighting is temporal and should be drawn regardless
+     *                      of highlighting Status
      */
     public void drawByStatus(ParallelCoordinatesChart chart, boolean tempHighlight) {
-    	if(!isVisible()) {
-    		path.setOpacity(chart.getFilteredOutOpacity());
-    	}
-    	else if(highlightingStatus == Status.VISIBLE || tempHighlight) {
-    		path.setOpacity(chart.getHighlightOpacity());
-    		path.setStrokeWidth(chart.getHighlightStrokeWidth());
-    		path.setStroke(chart.getHighlightColor());
-    	}
-    	else {
-    		path.setOpacity(series.getOpacity());
-    		path.setStrokeWidth(chart.getPathStrokeWidth());
-    		path.setStroke(series.getColor());
-    	}
+        if (highlightingStatus == Status.VISIBLE || tempHighlight) {
+            path.setOpacity(chart.getHighlightOpacity());
+            path.setStrokeWidth(chart.getHighlightStrokeWidth());
+            path.setStroke(chart.getHighlightColor());
+            System.out.println("show record" + this);
+        } else if (isVisible()) {
+            path.setOpacity(series.getOpacity());
+            path.setStrokeWidth(chart.getPathStrokeWidth());
+            path.setStroke(series.getColor());
+        } else {
+            path.setOpacity(chart.getFilteredOutOpacity());
+            System.out.println("hide record" + this);
+        }
     }
 
     public Object getAttByIndex(int index) {
@@ -165,38 +167,37 @@ public class Record {
         this.path = path;
     }
 
-	public Status getAxisFilterStatus() {
-		return axisFilterStatus;
-	}
+    public Status getAxisFilterStatus() {
+        return axisFilterStatus;
+    }
 
-	public void setAxisFilterStatus(Status axisFilterStatus) {
-		this.axisFilterStatus = axisFilterStatus;
-	}
+    public void setAxisFilterStatus(Status axisFilterStatus) {
+        this.axisFilterStatus = axisFilterStatus;
+    }
 
-	public Status getBrushingStatus() {
-		return brushingStatus;
-	}
+    public Status getBrushingStatus() {
+        return brushingStatus;
+    }
 
-	public void setBrushingStatus(Status brushingStatus) {
-		this.brushingStatus = brushingStatus;
-	}
+    public void setBrushingStatus(Status brushingStatus) {
+        this.brushingStatus = brushingStatus;
+    }
 
-	public Series getSeries() {
-		return series;
-	}
+    public Series getSeries() {
+        return series;
+    }
 
-	public void setSeries(Series series) {
-		this.series = series;
-	}
+    public void setSeries(Series series) {
+        this.series = series;
+    }
 
-	public Status getHighlightingStatus() {
-		return highlightingStatus;
-	}
+    public Status getHighlightingStatus() {
+        return highlightingStatus;
+    }
 
-	public void setHighlightingStatus(Status highlightingStatus) {
-		this.highlightingStatus = highlightingStatus;
-	}
-    
-	
-    
+    public void setHighlightingStatus(Status highlightingStatus) {
+        this.highlightingStatus = highlightingStatus;
+    }
+
+
 }
