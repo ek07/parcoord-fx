@@ -151,7 +151,9 @@ public class ParallelCoordinatesChart extends HighDimensionalChart {
 
         paneControls = new Pane();
         getChartChildren().add(paneControls);
-        Image btnInvertImg = new Image("resources/invert_1x.png", 17, 17, true, true);
+        Image btnInvertUpImg = new Image("resources/invert_up_1x.png");
+        Image btnInvertDownImg = new Image("resources/invert_down_1x.png");
+
         Image btnRightImg = new Image("resources/right_1x.png", 17, 17, true, true);
         Image btnLeftImg = new Image("resources/left_1x.png", 17, 17, true, true);
 
@@ -173,9 +175,15 @@ public class ParallelCoordinatesChart extends HighDimensionalChart {
             double lowerBound = minMax.get(axisId).getMinimum();
             double delta = Math.abs(upperBound - lowerBound);
 
+            if (pcAxis.isInverted()) {
+                double temp = lowerBound;
+                lowerBound = -upperBound;
+                upperBound = -temp;
+            }
+
             // Buttons
             Button btnInvert = new Button();
-            btnInvert.setGraphic(new ImageView(btnInvertImg));
+            btnInvert.setGraphic(new ImageView(!pcAxis.isInverted() ? btnInvertDownImg : btnInvertUpImg));
             DoubleBinding invertBtnPosition = trueAxisSeparation.subtract(btnInvert.widthProperty().divide(2));
             btnInvert.translateXProperty().bind(invertBtnPosition);
             btnInvert.setMinHeight(BUTTON_MIN_HEIGHT);
@@ -257,6 +265,7 @@ public class ParallelCoordinatesChart extends HighDimensionalChart {
 
             btnInvert.setOnAction(event -> {
                 pcAxis.invert();
+                btnInvert.setGraphic(new ImageView(!pcAxis.isInverted() ? btnInvertDownImg : btnInvertUpImg));
                 updateChartForNewSeries();
                 reorder();
             });
