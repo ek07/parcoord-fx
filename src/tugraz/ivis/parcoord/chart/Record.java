@@ -80,8 +80,8 @@ public class Record {
     public Record(int index, List<Object> values) {
         this.index = index;
         this.values.addAll(values);
-        brushingStatus = Status.OPAQUE;
-        axisFilterStatus = Status.OPAQUE;
+        brushingStatus = Status.NONE;
+        axisFilterStatus = Status.NONE;
     }
 
     /**
@@ -90,7 +90,7 @@ public class Record {
      * @return true if it should be visible, false otherwise
      */
     public boolean isVisible() {
-        return !(axisFilterStatus == Status.OPAQUE && brushingStatus == Status.OPAQUE);
+        return !(axisFilterStatus == Status.OPAQUE || brushingStatus == Status.OPAQUE);
     }
 
     /**
@@ -112,18 +112,16 @@ public class Record {
      *                      of highlighting Status
      */
     public void drawByStatus(ParallelCoordinatesChart chart, boolean tempHighlight) {
-        if (highlightingStatus == Status.VISIBLE || tempHighlight) {
+        if (!isVisible()) {
+            path.setOpacity(chart.getFilteredOutOpacity());
+        } else if (highlightingStatus == Status.VISIBLE || tempHighlight) {
             path.setOpacity(chart.getHighlightOpacity());
             path.setStrokeWidth(chart.getHighlightStrokeWidth());
             path.setStroke(chart.getHighlightColor());
-            System.out.println("show record" + this);
-        } else if (isVisible()) {
-            path.setOpacity(series.getOpacity());
-            path.setStrokeWidth(chart.getPathStrokeWidth());
-            path.setStroke(series.getColor());
         } else {
             path.setOpacity(chart.getFilteredOutOpacity());
-            System.out.println("hide record" + this);
+            path.setStrokeWidth(chart.getPathStrokeWidth());
+            path.setStroke(series.getColor());
         }
     }
 

@@ -25,8 +25,6 @@ import org.controlsfx.control.RangeSlider;
 import tugraz.ivis.parcoord.chart.Record.Status;
 
 import java.util.*;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 
 // TODO: implement basic graph here
 // TODO: this is basically only a bit of "playing around" for now
@@ -50,10 +48,6 @@ public class ParallelCoordinatesChart extends HighDimensionalChart {
     private double brushingRectangleX = 0.0;
     private double brushingRectangleY = 0.0;
 
-    private ExecutorService highlightExecutor = Executors.newFixedThreadPool(1);
-    private ExecutorService filterExecutor = Executors.newFixedThreadPool(4);
-    private ExecutorService brushingExecutor = Executors.newFixedThreadPool(1);
-
     private long lastFilterHandle = 0;
     private final static long FILTER_FREQUENCY = 100; // handle filter changes every x milliseconds
     public Pane paneControls;
@@ -65,6 +59,29 @@ public class ParallelCoordinatesChart extends HighDimensionalChart {
      * Default constructor needed for FXML
      */
     public ParallelCoordinatesChart() {
+        canvas = new Canvas();
+        getChartChildren().add(canvas);
+        canvas.setCache(true);
+        canvas.setCacheHint(CacheHint.SPEED);
+    }
+
+
+    @Override
+    public void updateChartForNewSeries() {
+        getChartChildren().remove(canvas);
+        canvas = new Canvas();
+        getChartChildren().add(canvas);
+        canvas.heightProperty().bind(innerHeightProperty());//innerWidthProperty().doubleValue(), innerHeightProperty().doubleValue());
+        canvas.widthProperty().bind(innerWidthProperty());
+        canvas.setCache(true);
+        canvas.setCacheHint(CacheHint.SPEED);
+
+        for (Series s : series) {
+            for (Record r : s.getRecords()) {
+                getChartChildren().removeAll(r.getPath());
+            }
+            bindSeries(s);
+        }
     }
 
     /**
@@ -213,7 +230,6 @@ public class ParallelCoordinatesChart extends HighDimensionalChart {
                 vSlider.translateXProperty().bind(trueAxisSeparation);
                 vSlider.translateYProperty().bind(btnInvert.heightProperty().add(BUTTON_MARGIN));
                 vSlider.getProperties().put("axis", pcAxis.getId());
-
                 addFilterListeners(vSlider);
 
                 getChartChildren().add(vSlider);
@@ -237,7 +253,7 @@ public class ParallelCoordinatesChart extends HighDimensionalChart {
 
             btnInvert.setOnAction(event -> {
                 pcAxis.invert();
-                redrawAllSeries();
+                updateChartForNewSeries();
                 reorder();
             });
 
@@ -262,6 +278,10 @@ public class ParallelCoordinatesChart extends HighDimensionalChart {
         }
         // register listener for last axis on its right
         registerDragAndDropListeners(null, paneControls, getAxisSeparationBinding().multiply(numAxes + 1), paneControls.getChildren().get(0).translateYProperty());
+
+        canvas.translateYProperty().bind(paneControls.heightProperty());
+        canvas.heightProperty().bind(innerHeightProperty().subtract(paneControls.heightProperty()));
+        canvas.widthProperty().bind(innerWidthProperty());
         resizeAxes();
     }
 
@@ -341,7 +361,7 @@ public class ParallelCoordinatesChart extends HighDimensionalChart {
         // refreshUI
         removeAxesFromChartChildren();
         bindAxes();
-        redrawAllSeries();
+        updateChartForNewSeries();
         reorder();
     }
 
@@ -359,7 +379,7 @@ public class ParallelCoordinatesChart extends HighDimensionalChart {
         // refreshUI
         removeAxesFromChartChildren();
         bindAxes();
-        redrawAllSeries();
+        updateChartForNewSeries();
         reorder();
     }
 
@@ -373,10 +393,10 @@ public class ParallelCoordinatesChart extends HighDimensionalChart {
         ChangeListener<Number> highListener = new ChangeListener<Number>() {
             @Override
             public void changed(ObservableValue<? extends Number> ov, Number oldVal, Number newVal) {
-                filterExecutor.submit(() -> {
-                    int axisId = (int) slider.getProperties().get("axis");
-                    handleFilterChange(axisId, oldVal, newVal, true);
-                });
+                // filterExecutor.submit(() -> {
+                int axisId = (int) slider.getProperties().get("axis");
+                handleFilterChange(axisId, oldVal, newVal, true);
+                //   });
             }
         };
 
@@ -386,10 +406,10 @@ public class ParallelCoordinatesChart extends HighDimensionalChart {
         ChangeListener<Number> lowListener = new ChangeListener<Number>() {
             @Override
             public void changed(ObservableValue<? extends Number> ov, Number oldVal, Number newVal) {
-                filterExecutor.submit(() -> {
-                    int axisId = (int) slider.getProperties().get("axis");
-                    handleFilterChange(axisId, oldVal, newVal, false);
-                });
+                //     filterExecutor.submit(() -> {
+                int axisId = (int) slider.getProperties().get("axis");
+                handleFilterChange(axisId, oldVal, newVal, false);
+                //  });
             }
         };
 
@@ -454,7 +474,7 @@ public class ParallelCoordinatesChart extends HighDimensionalChart {
                 filterOutLines(axisId, newV, false);
             }
         }
-
+        updateChartForNewSeries();
         //System.out.println("Old: " + Double.toString(oldV) + "; New: " + Double.toString(newV));
     }
 
@@ -625,12 +645,13 @@ public class ParallelCoordinatesChart extends HighDimensionalChart {
 
     @Override
     protected void layoutChartChildren(double top, double left, double width, double height) {
-        super.layoutChartChildren(top, left, width, height);
-        if ((int) width != this.width || (int) height != this.height) {
+        if (this.height != (int) height || this.width != (int) width) {
             this.height = (int) height;
             this.width = (int) width;
+            innerWidthProperty.set(width);
+            innerHeightProperty.set(height);
+            updateChartForNewSeries();
             resizeAxes();
-            redrawAllSeries();
         }
     }
 
@@ -651,25 +672,30 @@ public class ParallelCoordinatesChart extends HighDimensionalChart {
         Double valueEnd;
         Object dataPointStart;
         Object dataPointEnd;
-        //int numRecords = s.getRecords().size();
         int numColumns = getAttributeCount();
-        //System.out.println("cols:" + numColumns + "records" + numRecords);
-        getChartChildren().remove(canvas);
-        canvas = new Canvas();
-        getChartChildren().add(canvas);
-        //canvas.translateYProperty().bind(yStartAxes);
-        canvas.heightProperty().bind(innerHeightProperty());//innerWidthProperty().doubleValue(), innerHeightProperty().doubleValue());
-        canvas.widthProperty().bind(innerWidthProperty());
-        canvas.setCache(true);
-        canvas.setCacheHint(CacheHint.SPEED);
+
         canvas.toBack();
         GraphicsContext gc = canvas.getGraphicsContext2D();
-        gc.setStroke(Color.BLUE);
-        gc.setLineWidth(1);
-
+        gc.setLineWidth(getPathStrokeWidth());
         for (Record record : s.getRecords()) {
             gc.beginPath();
             Path shadowPath = new Path();
+            shadowPath.setStroke(s.getColor());
+            shadowPath.setOpacity(0.0);
+            shadowPath.setStrokeWidth(pathStrokeWidth);
+
+            shadowPath.setCacheHint(CacheHint.SPEED);
+            record.setPath(shadowPath);
+            record.drawByStatus(this);
+
+            if (useHighlighting) {
+                setupHighlightingEvents(shadowPath);
+            }
+
+            shadowPath.getProperties().put("record", record);
+            shadowPath.setCache(true);
+            getChartChildren().add(shadowPath);
+
             for (int curr = 1; curr < numColumns; curr++) {
                 ParallelCoordinatesAxis beforeAxis = axesSorted.get(curr - 1);
                 ParallelCoordinatesAxis currAxis = axesSorted.get(curr);
@@ -687,7 +713,6 @@ public class ParallelCoordinatesChart extends HighDimensionalChart {
                             axisSeparation.multiply(curr).doubleValue(), getValueOnAxis(yStartAxes, heightProp, valueStart, beforeAxis).doubleValue(),
                             axisSeparation.add(axisSeparation.multiply(curr)).doubleValue(), getValueOnAxis(yStartAxes, heightProp, valueEnd, currAxis).doubleValue()
                     };
-                    gc.strokeLine(coordinates[0], coordinates[1], coordinates[2], coordinates[3]);
 
                     if (curr - 1 == 0) {
                         MoveTo moveTo = new MoveTo();
@@ -705,25 +730,19 @@ public class ParallelCoordinatesChart extends HighDimensionalChart {
                     lineTo.setX(coordinates[2]);
                     lineTo.setY(coordinates[3]);
                     shadowPath.getElements().add(lineTo);
+
+                    if (record.isVisible()) {
+                        gc.setStroke(shadowPath.getStroke());
+                        gc.setLineWidth(shadowPath.getStrokeWidth());
+                        gc.strokeLine(coordinates[0], coordinates[1], coordinates[2], coordinates[3]);
+                    } else {
+                        System.out.println("record not visible");
+                    }
                 }
             }
-
-            //handled by record.drawByStatus()
-            shadowPath.setStroke(s.getColor());
-            shadowPath.setOpacity(s.getOpacity());
-            shadowPath.setStrokeWidth(pathStrokeWidth);
-
-            if (useHighlighting)
-                setupHighlightingEvents(shadowPath);
-
-            record.setPath(shadowPath);
-            record.drawByStatus(this);
-            shadowPath.getProperties().put("record", record);
-            shadowPath.setCache(true);
-            shadowPath.setCacheHint(CacheHint.SPEED);
-            getChartChildren().add(shadowPath);
             shadowPath.toFront();
         }
+        reorder();
     }
 
     /**
@@ -731,6 +750,7 @@ public class ParallelCoordinatesChart extends HighDimensionalChart {
      *
      * @param s the series which the chart adds and binds to its content
      */
+    @Deprecated
     protected void bindSeriesPath(Series s) {
      /*   // easier and more performant to simply sort the axes right away instead of crawling the map
         List<ParallelCoordinatesAxis> axesSorted = getAxesInOrder();
@@ -791,136 +811,6 @@ public class ParallelCoordinatesChart extends HighDimensionalChart {
         }*/
     }
 
-    /**
-     * Binds a given series to the chart content, and adds it to its chartChildren
-     *
-     * @param s the series which the chart adds and binds to its content
-     */
-    protected void bindSeriesPolyline(Series s) {
-        // easier and more performant to simply sort the axes right away instead of crawling the map
-        List<ParallelCoordinatesAxis> axesSorted = getAxesInOrder();
-
-        DoubleProperty yStartAxes = axes.get(0).getAxis().translateYProperty(); // starting point of axes
-        DoubleBinding axisSeparation = getAxisSeparationBinding();
-        DoubleBinding heightProp = innerHeightProperty().subtract(yStartAxes).multiply(1 - legend_height_relative);
-
-        Double value;
-        Object dataPoint;
-        //int numRecords = s.getRecords().size();
-        int numColumns = getAttributeCount();
-        //System.out.println("cols:" + numColumns + "records" + numRecords);
-        for (Record record : s.getRecords()) {
-            Polyline line = new Polyline();
-            dataPoint = record.getAttByIndex(axesSorted.get(0).getId());
-            value = (Double) dataPoint;
-            // for first data point, use moveto not lineto
-            // this has to be refactored when moving axes
-            line.getPoints().addAll(axisSeparation.doubleValue(), getValueOnAxis(yStartAxes, heightProp, value, axesSorted.get(0)).doubleValue());
-
-
-            for (int curr = 1; curr < numColumns; curr++) {
-                ParallelCoordinatesAxis currAxis = axesSorted.get(curr);
-                dataPoint = record.getAttByIndex(currAxis.getId());
-
-                if (dataPoint instanceof String) {
-                    break;
-                }
-
-                value = (Double) dataPoint;
-                if (value != null) {
-                    line.getPoints().addAll(axisSeparation.add(axisSeparation.multiply(curr)).doubleValue(), getValueOnAxis(yStartAxes, heightProp, value, currAxis).doubleValue());
-                }
-            }
-
-            //handled by record.drawByStatus()
-//            path.setStroke(s.getColor());
-//            path.setOpacity(s.getOpacity());
-//            path.setStrokeWidth(pathStrokeWidth);
-
-            //   if (useHighlighting)
-            //   setupHighlightingEvents(line);
-
-            // TODO change if needed
-
-            //    record.setCanvas(line);
-            record.drawByStatus(this);
-
-            line.getProperties().put("record", record);
-            line.setCache(true);
-            line.setCacheHint(CacheHint.SPEED);
-
-            getChartChildren().add(line);
-        }
-    }
-
-
-    /**
-     * Binds a given series to the chart content, and adds it to its chartChildren
-     *
-     * @param s the series which the chart adds and binds to its content
-     */
-    protected void bindSeriesSingleLine(Series s) {
-        // easier and more performant to simply sort the axes right away instead of crawling the map
-        List<ParallelCoordinatesAxis> axesSorted = getAxesInOrder();
-
-        DoubleProperty yStartAxes = axes.get(0).getAxis().translateYProperty(); // starting point of axes
-        DoubleBinding axisSeparation = getAxisSeparationBinding();
-        DoubleBinding heightProp = innerHeightProperty().subtract(yStartAxes).multiply(1 - legend_height_relative);
-        Object dataPointStart;
-        Object dataPointEnd;
-        Double valueStart;
-        Double valueEnd;
-        Object dataPoint;
-        //int numRecords = s.getRecords().size();
-        int numColumns = getAttributeCount();
-        //System.out.println("cols:" + numColumns + "records" + numRecords);
-        for (Record record : s.getRecords()) {
-
-
-            for (int curr = 1; curr < numColumns; curr++) {
-                Line line = new Line();
-                ParallelCoordinatesAxis beforeAxis = axesSorted.get(curr - 1);
-                ParallelCoordinatesAxis currAxis = axesSorted.get(curr);
-                dataPointStart = record.getAttByIndex(beforeAxis.getId());
-                dataPointEnd = record.getAttByIndex(currAxis.getId());
-                if (dataPointEnd instanceof String) {
-                    break;
-                }
-                valueStart = (Double) dataPointStart;
-                valueEnd = (Double) dataPointEnd;
-
-                // for first data point, use moveto not lineto
-                // this has to be refactored when moving axes
-                if (valueStart != null && valueEnd != null) {
-                    line.startXProperty().bind(axisSeparation.multiply(curr));
-                    line.startYProperty().bind(getValueOnAxis(yStartAxes, heightProp, valueStart, beforeAxis));
-                    line.endXProperty().bind(axisSeparation.multiply(curr + 1));
-                    line.endYProperty().bind(getValueOnAxis(yStartAxes, heightProp, valueEnd, currAxis));
-                }
-                line.getProperties().put("record", record);
-                line.setCache(true);
-                line.setCacheHint(CacheHint.SPEED);
-
-                getChartChildren().add(line);
-            }
-
-            //handled by record.drawByStatus()
-//            path.setStroke(s.getColor());
-//            path.setOpacity(s.getOpacity());
-//            path.setStrokeWidth(pathStrokeWidth);
-
-            //  if (useHighlighting)
-            //      setupHighlightingEvents(line);
-//
-            // TODO change if needed
-
-            //    record.setCanvas(line);
-            //record.drawByStatus(this);
-
-
-        }
-    }
-
 
     /**
      * Helper method for getting axes in correct display order
@@ -955,7 +845,7 @@ public class ParallelCoordinatesChart extends HighDimensionalChart {
     /**
      * Sets up event handling for the given path.
      *
-     * @param node The path for which events should be handled
+     * @param path The path for which events should be handled
      */
     private void setupHighlightingEvents(Path path) {
 
@@ -965,40 +855,34 @@ public class ParallelCoordinatesChart extends HighDimensionalChart {
             Record record = (Record) src.getProperties().get("record");
 
             // we don't need to handle events for invisible records
-            // if (record.isVisible()) {
+            if (record.isVisible()) {
 
-            // record is already highlighted
-            if (record.getHighlightingStatus() == Status.VISIBLE) {
-                record.setHighlightingStatus(Status.NONE);
-            } else {
-                record.setHighlightingStatus(Status.VISIBLE);
-                record.getPath().toFront();
+                // record is already highlighted
+                if (record.getHighlightingStatus() == Status.VISIBLE) {
+                    record.setHighlightingStatus(Status.NONE);
+                } else {
+                    record.setHighlightingStatus(Status.VISIBLE);
+                    record.getPath().toFront();
+                }
+
+                record.drawByStatus(this);
             }
-
-
-            record.drawByStatus(this);
-            //  }
         });
 
 
         // temporal highlighting for hover
         path.setOnMouseEntered((MouseEvent event) -> {
-            highlightExecutor.submit(() -> {
+            Path src = (Path) event.getSource();
+            Record record = (Record) src.getProperties().get("record");
 
-                Path src = (Path) event.getSource();
-                Record record = (Record) src.getProperties().get("record");
-
-                record.drawByStatus(this, true);
-            });
+            record.drawByStatus(this, true);
         });
 
         path.setOnMouseExited((MouseEvent event) -> {
-            highlightExecutor.submit(() -> {
-                Path src = (Path) event.getSource();
-                Record record = (Record) src.getProperties().get("record");
+            Path src = (Path) event.getSource();
+            Record record = (Record) src.getProperties().get("record");
 
-                record.drawByStatus(this);
-            });
+            record.drawByStatus(this);
         });
     }
 
@@ -1051,7 +935,8 @@ public class ParallelCoordinatesChart extends HighDimensionalChart {
                 return;
 
             //handle brushing
-            brushingExecutor.submit(() -> handleBrushing());
+            handleBrushing();
+            //   brushingExecutor.submit(() -> handleBrushing());
         });
     }
 
@@ -1073,8 +958,8 @@ public class ParallelCoordinatesChart extends HighDimensionalChart {
         for (Series s : series) {
             for (Record r : s.getRecords()) {
                 //skip lines which are not visible
-                // if (!r.isVisible())
-                //      continue;
+                if (!r.isVisible())
+                    continue;
 
                 Shape intersection = Shape.intersect(r.getPath(), brushingRectangle);
                 if (intersection.getBoundsInParent().intersects(getBoundsInLocal())) {
@@ -1082,10 +967,11 @@ public class ParallelCoordinatesChart extends HighDimensionalChart {
                     r.setBrushingStatus(Status.VISIBLE);
                 } else {
                     r.setBrushingStatus(Status.OPAQUE);
-                    r.drawByStatus(this);
                 }
+                r.drawByStatus(this);
             }
         }
+        updateChartForNewSeries();
     }
 
     /**
@@ -1106,6 +992,7 @@ public class ParallelCoordinatesChart extends HighDimensionalChart {
 //    			}
             }
         }
+        updateChartForNewSeries();
     }
 
 

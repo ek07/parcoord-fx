@@ -89,21 +89,6 @@ public abstract class HighDimensionalChart extends Chart implements Brushable {
         series.clear();
     }
 
-    /**
-     * Overwritten function of the Chart superclass.
-     * Automatically called by JavaFX after initialization and resizing of the chart.
-     * Used to update the top and left coordinates as well as the innerWidthProperty and innerHeightProperty with the
-     * updated values (after resizing the window).
-     */
-    @Override
-    protected void layoutChartChildren(double top, double left, double width, double height) {
-        this.top = top;
-        this.left = left;
-        innerWidthProperty.set(width);
-        innerHeightProperty.set(height);
-        resizeAxes();
-    }
-
     @Override
     public void redrawSelected() {
         throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
@@ -140,6 +125,8 @@ public abstract class HighDimensionalChart extends Chart implements Brushable {
         }
 
         bindSeries(s);
+        // TODO: why is this needed?
+        updateChartForNewSeries();
         reorder();
     }
 
@@ -179,20 +166,6 @@ public abstract class HighDimensionalChart extends Chart implements Brushable {
             }
         }
         series.clear();
-    }
-
-    /**
-     * Forces redraw on whole series (not on axes!)
-     * Method more used for testing and refactoring than for real deployment
-     * TODO: removed
-     */
-    public void redrawAllSeries() {
-        for (Series s : series) {
-            for (Record r : s.getRecords()) {
-                getChartChildren().removeAll(r.getPath());
-            }
-            bindSeries(s);
-        }
     }
 
     /**
@@ -263,10 +236,6 @@ public abstract class HighDimensionalChart extends Chart implements Brushable {
      */
     protected abstract void bindAxes();
 
-    /**
-     * Subclasses should implement this method to resize axes
-     */
-    protected abstract void resizeAxes();
 
     /**
      * Subclasses should implement this method to bind a given series to the chart
@@ -279,4 +248,6 @@ public abstract class HighDimensionalChart extends Chart implements Brushable {
      * z dimension (if necessary)
      */
     protected abstract void reorder();
+
+    protected abstract void updateChartForNewSeries();
 }
