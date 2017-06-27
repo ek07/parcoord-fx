@@ -1,12 +1,11 @@
 package tugraz.ivis.parcoord.chart;
 
 import javafx.beans.value.ChangeListener;
+import javafx.event.EventHandler;
 import javafx.geometry.Insets;
 import javafx.scene.chart.NumberAxis;
 import javafx.scene.control.Button;
-import javafx.scene.input.ClipboardContent;
-import javafx.scene.input.Dragboard;
-import javafx.scene.input.TransferMode;
+import javafx.scene.input.*;
 import javafx.scene.layout.Background;
 import javafx.scene.layout.BackgroundFill;
 import javafx.scene.layout.CornerRadii;
@@ -78,7 +77,7 @@ public class ParallelCoordinatesAxis {
 
     public void registerDragAndDropListener(ParallelCoordinatesChart chart, ParallelCoordinatesChart.DragAndDropLabel labelDragAndDrop) {
         /* === set filter slider drag and drops === */
-        filterSlider.setOnDragDetected(event -> {
+        EventHandler<MouseEvent> handlerDragDetected = event -> {
             /* drag was detected, start a drag-and-drop gesture*/
             /* allow any transfer mode */
             Dragboard db = axis.startDragAndDrop(TransferMode.MOVE);
@@ -87,55 +86,75 @@ public class ParallelCoordinatesAxis {
             ClipboardContent content = new ClipboardContent();
             content.putString(axisIndex + "");
             db.setContent(content);
-            System.out.println("drag started from:" + axisIndex);
+            //System.out.println("drag started from:" + axisIndex);
 
-            highlightAxis(true);
+            ParallelCoordinatesAxis.this.highlightAxis(true);
             //  event.consume();
-        });
+        };
+        btnInvert.setOnDragDetected(handlerDragDetected);
+        btnLeft.setOnDragDetected(handlerDragDetected);
+        btnRight.setOnDragDetected(handlerDragDetected);
+        labelBox.setOnDragDetected(handlerDragDetected);
 
         // this is needed to register which transfer modes are allowed
-        filterSlider.setOnDragOver(event -> {
+        EventHandler<DragEvent> handlerDragOver = event -> {
             /* data is dragged over the target */
             /* if it has a string data */
             if (event.getDragboard().hasString()) {
-                /* allow for both copying and moving, whatever user chooses */
+            /* allow for both copying and moving, whatever user chooses */
                 event.acceptTransferModes(TransferMode.MOVE);
             }
 
             // event.consume();
-        });
+        };
+
+        btnInvert.setOnDragOver(handlerDragOver);
+        btnLeft.setOnDragOver(handlerDragOver);
+        btnRight.setOnDragOver(handlerDragOver);
+        labelBox.setOnDragOver(handlerDragOver);
+        filterSlider.setOnDragOver(handlerDragOver);
+
+        EventHandler<DragEvent> handlerDragEntered = event -> ParallelCoordinatesAxis.this.highlightAxis(true);
+
+        btnInvert.setOnDragEntered(handlerDragEntered);
+        btnLeft.setOnDragEntered(handlerDragEntered);
+        btnRight.setOnDragEntered(handlerDragEntered);
+        labelBox.setOnDragEntered(handlerDragEntered);
+        filterSlider.setOnDragEntered(handlerDragEntered);
 
 
-        filterSlider.setOnDragEntered(event -> {
-            highlightAxis(true);
-        });
-
-        filterSlider.setOnDragExited(event -> {
+        EventHandler<DragEvent> handlerDragExited = event -> {
             String oldAxisAsString = event.getDragboard().getString();
             if (event.getDragboard().hasString() && oldAxisAsString != null) {
-                System.out.println("drag exited at:" + axisIndex + " from " + oldAxisAsString);
+                // System.out.println("drag exited at:" + axisIndex + " from " + oldAxisAsString);
 
                 int oldAxisIndex = Integer.parseInt(oldAxisAsString);
                 if (oldAxisIndex != axisIndex) {
-                    highlightAxis(false);
+                    ParallelCoordinatesAxis.this.highlightAxis(false);
                 }
             }
 
             // event.consume();
-        });
+        };
 
-        filterSlider.setOnDragDropped(event -> {
-            /* data dropped */
-            /* if there is a string data on dragboard, read it and use it */
+        btnInvert.setOnDragExited(handlerDragExited);
+        btnLeft.setOnDragExited(handlerDragExited);
+        btnRight.setOnDragExited(handlerDragExited);
+        labelBox.setOnDragExited(handlerDragExited);
+        filterSlider.setOnDragExited(handlerDragExited);
+
+        EventHandler<DragEvent> dropHandlerAxis = event -> {
+        /* data dropped */
+        /* if there is a string data on dragboard, read it and use it */
             boolean success = false;
             String oldAxisAsString = event.getDragboard().getString();
             if (event.getDragboard().hasString() && oldAxisAsString != null) {
                 int oldAxisIndex = Integer.parseInt(oldAxisAsString);
-                highlightAxis(false);
+                ParallelCoordinatesAxis.this.highlightAxis(false);
 
                 chart.getAxisByIndex(oldAxisIndex).highlightAxis(false);
                 success = true;
-                System.out.println("drag dropped at:" + axisIndex + " from " + oldAxisAsString);
+                //  System.out.println("drag dropped at:" + axisIndex + " from " + oldAxisAsString);
 
 
                 if (oldAxisIndex != axisIndex) {
@@ -144,12 +163,19 @@ public class ParallelCoordinatesAxis {
             }
 
 
-            /* let the source know whether the string was successfully
-             * transferred and used */
+        /* let the source know whether the string was successfully
+         * transferred and used */
             event.setDropCompleted(success);
             //  event.consume();
-        });
+        };
 
+        filterSlider.setOnDragDropped(dropHandlerAxis);
+        labelBox.setOnDragDropped(dropHandlerAxis);
+        btnInvert.setOnDragDropped(dropHandlerAxis);
+        btnLeft.setOnDragDropped(dropHandlerAxis);
+        btnRight.setOnDragDropped(dropHandlerAxis);
+
+        /* ==== set label drag and drops === */
         labelDragAndDrop.setOnDragOver(event -> {
             /* data is dragged over the target */
             /* if it has a string data */
@@ -161,7 +187,6 @@ public class ParallelCoordinatesAxis {
             // event.consume();
         });
 
-        /* ==== set label drag and drops === */
         labelDragAndDrop.setOnDragEntered(event -> {
             labelDragAndDrop.show(true);
         });
