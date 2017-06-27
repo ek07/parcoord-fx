@@ -30,6 +30,7 @@ import java.util.*;
 // TODO: this is basically only a bit of "playing around" for now
 public class ParallelCoordinatesChart extends HighDimensionalChart {
     private static final double BUTTON_MARGIN = 5.0;
+    private static final double BUTTON_MIN_HEIGHT = 27;
     private List<String> axisLabels;
     private Map<Integer, ParallelCoordinatesAxis> axes = new HashMap<>();
     private boolean useAxisFilters = true;
@@ -177,6 +178,9 @@ public class ParallelCoordinatesChart extends HighDimensionalChart {
             btnInvert.setGraphic(new ImageView(btnInvertImg));
             DoubleBinding invertBtnPosition = trueAxisSeparation.subtract(btnInvert.widthProperty().divide(2));
             btnInvert.translateXProperty().bind(invertBtnPosition);
+            btnInvert.setMinHeight(BUTTON_MIN_HEIGHT);
+            btnInvert.setMaxHeight(BUTTON_MIN_HEIGHT);
+            btnInvert.setPrefHeight(BUTTON_MIN_HEIGHT);
 
             paneControls.getChildren().add(btnInvert);
             Button btnRight = new Button();
@@ -213,7 +217,7 @@ public class ParallelCoordinatesChart extends HighDimensionalChart {
                 labelNode.setAlignment(Pos.CENTER);
                 box = new HBox(labelNode);
                 box.translateXProperty().bind(trueAxisSeparation.subtract(labelMinWidth / 2));
-                box.translateYProperty().bind(innerHeightProperty.subtract(labelYOffset).multiply(1 - legend_height_relative * .95));
+                box.translateYProperty().bind(innerHeightProperty.subtract(labelYOffset).multiply(1 - legend_height_relative * .85));
 
                 getChartChildren().add(box);
             }
@@ -279,9 +283,6 @@ public class ParallelCoordinatesChart extends HighDimensionalChart {
         // register listener for last axis on its right
         registerDragAndDropListeners(null, paneControls, getAxisSeparationBinding().multiply(numAxes + 1), paneControls.getChildren().get(0).translateYProperty());
 
-        canvas.translateYProperty().bind(paneControls.heightProperty());
-        canvas.heightProperty().bind(innerHeightProperty().subtract(paneControls.heightProperty()));
-        canvas.widthProperty().bind(innerWidthProperty());
         resizeAxes();
     }
 
@@ -590,7 +591,7 @@ public class ParallelCoordinatesChart extends HighDimensionalChart {
      */
     protected void resizeAxes() {
         for (ParallelCoordinatesAxis axis : axes.values()) {
-            double buttonHeight = axis.getBtnInvert().heightProperty().doubleValue() + BUTTON_MARGIN;
+            double buttonHeight = getButtonPaneOffset();
             axis.getAxis().resize(1.0, (innerHeightProperty.doubleValue() - buttonHeight) * (1 - legend_height_relative));
 
             if (axis.getFilterSlider() != null)
@@ -655,6 +656,11 @@ public class ParallelCoordinatesChart extends HighDimensionalChart {
         }
     }
 
+
+    private double getButtonPaneOffset() {
+        return axes.get(0).getBtnInvert().getMinHeight() + BUTTON_MARGIN;
+    }
+
     /**
      * Binds a given series to the chart content, and adds it to its chartChildren
      *
@@ -664,7 +670,7 @@ public class ParallelCoordinatesChart extends HighDimensionalChart {
         // easier and more performant to simply sort the axes right away instead of crawling the map
         List<ParallelCoordinatesAxis> axesSorted = getAxesInOrder();
 
-        DoubleProperty yStartAxes = axes.get(0).getAxis().translateYProperty(); // starting point of axes
+        double yStartAxes = getButtonPaneOffset(); // starting point of axes
         DoubleBinding axisSeparation = getAxisSeparationBinding();
         DoubleBinding heightProp = innerHeightProperty().subtract(yStartAxes).multiply(1 - legend_height_relative);
 
@@ -732,11 +738,10 @@ public class ParallelCoordinatesChart extends HighDimensionalChart {
                     shadowPath.getElements().add(lineTo);
 
                     if (record.isVisible()) {
-                        gc.setStroke(shadowPath.getStroke());
+                        Color sColor = s.getColor();
+                        gc.setStroke(new Color(sColor.getRed(), sColor.getGreen(), sColor.getBlue(), s.getOpacity()));
                         gc.setLineWidth(shadowPath.getStrokeWidth());
                         gc.strokeLine(coordinates[0], coordinates[1], coordinates[2], coordinates[3]);
-                    } else {
-                        System.out.println("record not visible");
                     }
                 }
             }
@@ -830,7 +835,7 @@ public class ParallelCoordinatesChart extends HighDimensionalChart {
      * @param value      the value of the data to be displayed
      * @param axis       the axis to look at
      */
-    private DoubleBinding getValueOnAxis(DoubleProperty yStartAxes, DoubleBinding heightAxis, double value, ParallelCoordinatesAxis axis) {
+    private DoubleBinding getValueOnAxis(double yStartAxes, DoubleBinding heightAxis, double value, ParallelCoordinatesAxis axis) {
         DoubleBinding binding;
 
         if (!axis.isInverted()) {
