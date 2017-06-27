@@ -37,7 +37,7 @@ public class ParallelCoordinatesChart extends HighDimensionalChart {
 
     private double pathStrokeWidth = 1.0;
 
-    private double legend_height_relative = 0.05;
+    private double legend_height_relative = 0.1;
 
     private boolean useHighlighting = true;
     private double highlightOpacity = 1.0;
@@ -166,10 +166,11 @@ public class ParallelCoordinatesChart extends HighDimensionalChart {
             numberAxis.translateXProperty().bind(trueAxisSeparation);
             DoubleBinding heightButton = btnInvert.heightProperty().add(BUTTON_MARGIN);
             numberAxis.translateYProperty().bind(heightButton);
-            DoubleBinding innerHeightWithoutButton = innerHeightProperty().subtract(heightButton);
+            DoubleBinding innerHeightWithoutButton = innerHeightProperty().subtract(heightButton).multiply(1 - legend_height_relative);
             numberAxis.tickUnitProperty().bind(
                     innerHeightWithoutButton.divide(innerHeightWithoutButton).divide(innerHeightWithoutButton)
                             .multiply(spaceBetweenTicks).multiply(delta));
+
 
             getChartChildren().add(numberAxis);
 
@@ -181,7 +182,7 @@ public class ParallelCoordinatesChart extends HighDimensionalChart {
                 labelNode.setAlignment(Pos.CENTER);
                 box = new HBox(labelNode);
                 box.translateXProperty().bind(trueAxisSeparation.subtract(labelMinWidth / 2));
-                box.translateYProperty().bind(innerHeightProperty.subtract(labelYOffset));
+                box.translateYProperty().bind(innerHeightProperty.subtract(labelYOffset).multiply(1 - legend_height_relative * .95));
 
                 getChartChildren().add(box);
             }
@@ -496,10 +497,10 @@ public class ParallelCoordinatesChart extends HighDimensionalChart {
     protected void resizeAxes() {
         for (ParallelCoordinatesAxis axis : axes.values()) {
             double buttonHeight = axis.getBtnInvert().heightProperty().doubleValue() + BUTTON_MARGIN;
-            axis.getAxis().resize(1.0, innerHeightProperty.doubleValue() - buttonHeight);
+            axis.getAxis().resize(1.0, (innerHeightProperty.doubleValue() - buttonHeight) * (1 - legend_height_relative));
 
             if (axis.getFilterSlider() != null)
-                axis.getFilterSlider().resize(1.0, innerHeightProperty.doubleValue() - buttonHeight);
+                axis.getFilterSlider().resize(1.0, (innerHeightProperty.doubleValue() - buttonHeight) * (1 - legend_height_relative));
         }
     }
 
@@ -566,7 +567,7 @@ public class ParallelCoordinatesChart extends HighDimensionalChart {
 
         DoubleProperty yStartAxes = axes.get(0).getAxis().translateYProperty(); // starting point of axes
         DoubleBinding axisSeparation = getAxisSeparationBinding();
-        DoubleBinding heightProp = innerHeightProperty().subtract(yStartAxes);
+        DoubleBinding heightProp = innerHeightProperty().subtract(yStartAxes).multiply(1 - legend_height_relative);
 
         Double value;
         Object dataPoint;
@@ -911,8 +912,8 @@ public class ParallelCoordinatesChart extends HighDimensionalChart {
         DoubleBinding heightProp = innerHeightProperty().multiply(1);
         DoubleBinding widthProp = innerWidthProperty().multiply(1);
 
-        DoubleBinding heightPropLegendBorder = innerHeightProperty().multiply(1 - legend_height_relative);
-        DoubleBinding heightPropLegend = innerHeightProperty().multiply(1 - legend_height_relative / 2);
+        DoubleBinding heightPropLegendBorder = innerHeightProperty().multiply(1 - legend_height_relative / 2);
+        DoubleBinding heightPropLegend = innerHeightProperty().multiply(1 - legend_height_relative / 4);
 
 
         Path path = new Path();

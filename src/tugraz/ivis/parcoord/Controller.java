@@ -11,7 +11,10 @@ import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
 import javafx.geometry.Side;
 import javafx.scene.control.Alert;
+import javafx.scene.control.Label;
 import javafx.scene.layout.AnchorPane;
+import javafx.scene.layout.HBox;
+import javafx.scene.layout.VBox;
 import javafx.scene.paint.Color;
 import javafx.stage.FileChooser;
 import javafx.stage.Stage;
@@ -121,16 +124,9 @@ public class Controller implements Initializable {
         List<Record> series2 = series.subList(series.size() / 3 + 1, 2 * series.size() / 3);
         List<Record> series3 = series.subList(2 * series.size() / 3 + 1, series.size() - 1);
 
-        List<Series> series_list = new ArrayList<Series>();
-
         Series s1 = new Series("series1", series1, Color.RED, 0.2);
         Series s2 = new Series("series2", series2, Color.BLUE, 0.2);
         Series s3 = new Series("series3", series3, Color.GREEN, 0.2);
-
-        series_list.add(s1);
-        series_list.add(s2);
-        series_list.add(s3);
-
 
         parcoordChart.clear();
         parcoordChart.setMinMaxValuesFromArray(dm.getMinMaxValues());
@@ -144,6 +140,7 @@ public class Controller implements Initializable {
         parcoordChart.setHighlightStrokeWidth(3);
 
         parcoordChart.drawLegend();
+
     }
 
     //TODO: this is just a "hack" for testing
