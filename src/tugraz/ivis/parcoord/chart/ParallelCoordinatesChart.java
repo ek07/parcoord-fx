@@ -267,10 +267,6 @@ public class ParallelCoordinatesChart extends HighDimensionalChart {
         // this is fine even if pcAxis is null
         labelDragAndDrop.axisRight = pcAxis;
 
-        if (rightIndex - 1 != 0) {
-            labelDragAndDrop.axisLeft = getAxisByIndex(rightIndex - 1);
-        }
-
         if (pcAxis == null) {
             pcAxis = getAxisByIndex(getAttributeCount() - 1);
         }
@@ -1048,12 +1044,10 @@ public class ParallelCoordinatesChart extends HighDimensionalChart {
     }
 
     public class AxisSeparatorLabel extends Label {
-        private ParallelCoordinatesAxis axisLeft;
         private ParallelCoordinatesAxis axisRight;
 
-        AxisSeparatorLabel(Background fill, ParallelCoordinatesAxis axisLeft, ParallelCoordinatesAxis axisRight) {
+        AxisSeparatorLabel(Background fill, ParallelCoordinatesAxis axisRight) {
             this(fill);
-            this.axisLeft = axisLeft;
             this.axisRight = axisRight;
         }
 
@@ -1063,10 +1057,6 @@ public class ParallelCoordinatesChart extends HighDimensionalChart {
             setBackground(fill);
             setOpacity(0.0);
             setAlignment(Pos.CENTER);
-        }
-
-        public ParallelCoordinatesAxis getAxisLeft() {
-            return axisLeft;
         }
 
         public ParallelCoordinatesAxis getAxisRight() {

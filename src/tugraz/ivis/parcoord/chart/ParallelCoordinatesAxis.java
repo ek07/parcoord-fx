@@ -77,6 +77,7 @@ public class ParallelCoordinatesAxis {
     }
 
     public void registerDragAndDropListener(ParallelCoordinatesChart chart, ParallelCoordinatesChart.AxisSeparatorLabel labelDragAndDrop) {
+        /* === set filter slider drag and drops === */
         filterSlider.setOnDragDetected(event -> {
             /* drag was detected, start a drag-and-drop gesture*/
             /* allow any transfer mode */
@@ -106,17 +107,17 @@ public class ParallelCoordinatesAxis {
 
 
         filterSlider.setOnDragEntered(event -> {
-            axis.setBackground(new Background(new BackgroundFill(Color.BLUE, CornerRadii.EMPTY, Insets.EMPTY)));
+            highlightAxis(true);
         });
 
         filterSlider.setOnDragExited(event -> {
             String oldAxisAsString = event.getDragboard().getString();
             if (event.getDragboard().hasString() && oldAxisAsString != null) {
-                System.out.println("drag dropped at:" + axisIndex + " from " + oldAxisAsString);
+                System.out.println("drag exited at:" + axisIndex + " from " + oldAxisAsString);
 
                 int oldAxisIndex = Integer.parseInt(oldAxisAsString);
                 if (oldAxisIndex != axisIndex) {
-                    chart.getAxisByIndex(oldAxisIndex).highlightAxis(false);
+                    highlightAxis(false);
                 }
             }
 
@@ -129,17 +130,19 @@ public class ParallelCoordinatesAxis {
             boolean success = false;
             String oldAxisAsString = event.getDragboard().getString();
             if (event.getDragboard().hasString() && oldAxisAsString != null) {
+                int oldAxisIndex = Integer.parseInt(oldAxisAsString);
+                highlightAxis(false);
+
+                chart.getAxisByIndex(oldAxisIndex).highlightAxis(false);
                 success = true;
                 System.out.println("drag dropped at:" + axisIndex + " from " + oldAxisAsString);
 
-                int oldAxisIndex = Integer.parseInt(oldAxisAsString);
+
                 if (oldAxisIndex != axisIndex) {
                     chart.swapAxes(oldAxisIndex, axisIndex);
                 }
-
-                chart.getAxisByIndex(oldAxisIndex).highlightAxis(false);
             }
-            highlightAxis(false);
+
 
             /* let the source know whether the string was successfully
              * transferred and used */
@@ -158,6 +161,7 @@ public class ParallelCoordinatesAxis {
             event.consume();
         });
 
+        /* ==== set label drag and drops === */
         labelDragAndDrop.setOnDragEntered(event -> {
             labelDragAndDrop.show(true);
         });
@@ -362,7 +366,7 @@ public class ParallelCoordinatesAxis {
         Background background = null;
 
         if (axisHighlighted) {
-            background = new Background(new BackgroundFill(Color.BLUE, CornerRadii.EMPTY, Insets.EMPTY));
+            background = new Background(new BackgroundFill(Color.NAVY, CornerRadii.EMPTY, Insets.EMPTY));
         }
 
         // has to be done this way, not via opacity!
