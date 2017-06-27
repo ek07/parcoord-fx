@@ -90,7 +90,7 @@ public class ParallelCoordinatesAxis {
             System.out.println("drag started from:" + axisIndex);
 
             highlightAxis(true);
-            event.consume();
+            //  event.consume();
         });
 
         // this is needed to register which transfer modes are allowed
@@ -102,7 +102,7 @@ public class ParallelCoordinatesAxis {
                 event.acceptTransferModes(TransferMode.MOVE);
             }
 
-            event.consume();
+            // event.consume();
         });
 
 
@@ -121,7 +121,7 @@ public class ParallelCoordinatesAxis {
                 }
             }
 
-            event.consume();
+            // event.consume();
         });
 
         filterSlider.setOnDragDropped(event -> {
@@ -147,7 +147,7 @@ public class ParallelCoordinatesAxis {
             /* let the source know whether the string was successfully
              * transferred and used */
             event.setDropCompleted(success);
-            event.consume();
+            //  event.consume();
         });
 
         labelDragAndDrop.setOnDragOver(event -> {
@@ -158,7 +158,7 @@ public class ParallelCoordinatesAxis {
                 event.acceptTransferModes(TransferMode.MOVE);
             }
 
-            event.consume();
+            // event.consume();
         });
 
         /* ==== set label drag and drops === */
@@ -205,7 +205,7 @@ public class ParallelCoordinatesAxis {
             /* let the source know whether the string was successfully
              * transferred and used */
             event.setDropCompleted(success);
-            event.consume();
+            // event.consume();
         });
     }
 

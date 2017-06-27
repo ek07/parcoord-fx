@@ -88,7 +88,7 @@ public class ParallelCoordinatesChart extends HighDimensionalChart {
      */
     protected void reorder() {
         // for (DragAndDropLabel label : pane) {
-        paneControls.toFront();
+        // paneControls.toFront();
         // }
 
         for (ParallelCoordinatesAxis axis : axes.values()) {
@@ -273,6 +273,7 @@ public class ParallelCoordinatesChart extends HighDimensionalChart {
 
         pcAxis.registerDragAndDropListener(this, labelDragAndDrop);
         buttonPane.getChildren().add(labelDragAndDrop);
+        labelDragAndDrop.toBack();
     }
 
     /**
