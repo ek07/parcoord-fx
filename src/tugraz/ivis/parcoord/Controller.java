@@ -1,20 +1,10 @@
 package tugraz.ivis.parcoord;
 
-import java.io.File;
-import java.net.URL;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.ResourceBundle;
-
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
-import javafx.geometry.Side;
 import javafx.scene.control.Alert;
-import javafx.scene.control.Label;
 import javafx.scene.layout.AnchorPane;
-import javafx.scene.layout.HBox;
-import javafx.scene.layout.VBox;
 import javafx.scene.paint.Color;
 import javafx.stage.FileChooser;
 import javafx.stage.Stage;
@@ -22,6 +12,11 @@ import tugraz.ivis.parcoord.chart.ParallelCoordinatesChart;
 import tugraz.ivis.parcoord.chart.Record;
 import tugraz.ivis.parcoord.chart.Series;
 import tugraz.ivis.parcoord.util.importer.DataModel;
+
+import java.io.File;
+import java.net.URL;
+import java.util.List;
+import java.util.ResourceBundle;
 
 // FXML interaction goes here
 public class Controller implements Initializable {
@@ -140,7 +135,6 @@ public class Controller implements Initializable {
         parcoordChart.setHighlightStrokeWidth(3);
 
         parcoordChart.drawLegend();
-
     }
 
     //TODO: this is just a "hack" for testing

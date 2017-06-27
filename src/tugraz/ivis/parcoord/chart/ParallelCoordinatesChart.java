@@ -18,7 +18,6 @@ import javafx.scene.layout.HBox;
 import javafx.scene.layout.Pane;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.*;
-import javafx.scene.text.TextAlignment;
 import org.controlsfx.control.RangeSlider;
 import tugraz.ivis.parcoord.chart.Record.Status;
 
@@ -948,8 +947,7 @@ public class ParallelCoordinatesChart extends HighDimensionalChart {
         HBox box = null;
         Label labelNode = null;
 
-        for (int curr = 0; curr < series.size(); curr++)
-        {
+        for (int curr = 0; curr < series.size(); curr++) {
             path = new Path();
 
             labelNode = new Label(series.get(curr).getName());
