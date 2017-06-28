@@ -184,6 +184,7 @@ public class ParallelCoordinatesChart extends HighDimensionalChart {
 
             // Buttons
             Button btnInvert = new Button();
+            btnInvert.setStyle("-fx-faint-focus-color: transparent; -fx-focus-color: -fx-outer-border, -fx-inner-border, -fx-body-color; -fx-effect: null;");
             btnInvert.setGraphic(new ImageView(!pcAxis.isInverted() ? btnInvertDownImg : btnInvertUpImg));
             DoubleBinding invertBtnPosition = trueAxisSeparation.subtract(btnInvert.widthProperty().divide(2));
             btnInvert.translateXProperty().bind(invertBtnPosition);
