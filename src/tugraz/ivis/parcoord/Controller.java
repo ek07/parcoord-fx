@@ -27,7 +27,8 @@ public class Controller implements Initializable {
     @FXML
     private ParallelCoordinatesChart parcoordChart = null;
 
-    @FXML RadioMenuItem toggle_legend;
+    @FXML
+    RadioMenuItem toggle_legend;
 
     // === other helper params
     private Stage stage;
@@ -63,10 +64,6 @@ public class Controller implements Initializable {
                 parcoordChart.setTitle("loading ...");
             */
             importDataFromFile(file.getAbsolutePath());
-
-
-
-
 
 
             parcoordChart.setTitle(file.getName());
@@ -128,9 +125,9 @@ public class Controller implements Initializable {
         List<Record> series2 = series.subList(series.size() / 3 + 1, 2 * series.size() / 3);
         List<Record> series3 = series.subList(2 * series.size() / 3 + 1, series.size() - 1);
 
-        Series s1 = new Series("series1", series1, Color.RED, 0.2);
-        Series s2 = new Series("series2", series2, Color.BLUE, 0.2);
-        Series s3 = new Series("series3", series3, Color.GREEN, 0.2);
+        Series s1 = new Series("Year 70-74", series1, Color.RED, 0.2);
+        Series s2 = new Series("Year 74-77", series2, Color.BLUE, 0.2);
+        Series s3 = new Series("Year 77-82", series3, Color.GREEN, 0.2);
 
         parcoordChart.clear();
         parcoordChart.setMinMaxValuesFromArray(dm.getMinMaxValues());
@@ -160,8 +157,7 @@ public class Controller implements Initializable {
     }
 
     public void toggleLegend(ActionEvent actionEvent) {
-        if(parcoordChart != null)
-        {
+        if (parcoordChart != null) {
             parcoordChart.toggleShowLegend();
         }
     }
