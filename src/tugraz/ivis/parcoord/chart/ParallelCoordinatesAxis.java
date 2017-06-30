@@ -5,6 +5,7 @@ import javafx.event.EventHandler;
 import javafx.geometry.Insets;
 import javafx.scene.chart.NumberAxis;
 import javafx.scene.control.Button;
+import javafx.scene.image.Image;
 import javafx.scene.input.*;
 import javafx.scene.layout.Background;
 import javafx.scene.layout.BackgroundFill;
@@ -86,9 +87,11 @@ public class ParallelCoordinatesAxis {
             ClipboardContent content = new ClipboardContent();
             content.putString(axisIndex + "");
             db.setContent(content);
-            //System.out.println("drag started from:" + axisIndex);
 
             ParallelCoordinatesAxis.this.highlightAxis(true);
+            // set drag image
+            Image dragImage = new Image("resources/drag.png");
+            db.setDragView(dragImage, dragImage.getWidth() / 4.0, -20);
             //  event.consume();
         };
         btnInvert.setOnDragDetected(handlerDragDetected);
@@ -248,7 +251,7 @@ public class ParallelCoordinatesAxis {
                 }
 
                 // call original formatter with inverted value
-                return super.toString(new Double(val));
+                return "";//super.toString(new Double(val));
             }
         });
     }

@@ -148,9 +148,9 @@ public class Controller implements Initializable {
     //TODO: this is just a "hack" for testing
     public void initTestGraphData() {
         // TODO: hardcoded path because its simply quicker for now
-        DataModel dm = new DataModel("C:\\Users\\Helmut\\Documents\\GitHub\\parcoord-fx\\src\\data\\auto3.csv", ";", true);
-        //DataModel dm = new DataModel("/home/thorsten/Uni/master/Sem3/InfoVis/Ass3/parcoord-fx/src/data/auto3.csv", ";", true);
-        //new DataModel("C:\\Users\\mchegini\\Documents\\NetBeansProjects\\PaCoPlot\\parcoord-fx\\src\\data\\auto3.csv", ";", true);
+        //DataModel dm = new DataModel("C:\\Users\\Helmut\\Documents\\GitHub\\parcoord-fx\\src\\data\\car.csv", ";", true);
+        DataModel dm = new DataModel("/home/thorsten/Uni/master/Sem3/InfoVis/Ass3/parcoord-fx/src/data/car.csv", ";", true);
+        //new DataModel("C:\\Users\\mchegini\\Documents\\NetBeansProjects\\PaCoPlot\\parcoord-fx\\src\\data\\car.csv", ";", true);
         //DataModel dm = new DataModel("C:\\Users\\Thomas\\Documents\\Uni\\10. Semester\\ivis\\project\\parcoord-fx\\src\\data\\auto3.csv", ";", true);
         setDataModelToGraph(dm);
         parcoordChart.enableBrushing();

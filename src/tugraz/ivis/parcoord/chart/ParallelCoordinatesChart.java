@@ -161,6 +161,8 @@ public class ParallelCoordinatesChart extends HighDimensionalChart {
         for (ParallelCoordinatesAxis pcAxis : axes.values()) {
             int axisIndex = pcAxis.getAxisIndex(); // the current position
             int axisId = pcAxis.getId();
+            DoubleBinding currAxisPosition = getAxisSeparationBinding().multiply(axisIndex + 1);
+
             String label = null;
             if (axisLabels.size() - 1 >= axisId) {
                 if (axisId < axisLabels.size()) {
@@ -169,8 +171,6 @@ public class ParallelCoordinatesChart extends HighDimensionalChart {
                     label = "?";
                 }
             }
-
-            DoubleBinding trueAxisSeparation = getAxisSeparationBinding().multiply(axisIndex + 1);
 
             double upperBound = minMax.get(axisId).getMaximum();
             double lowerBound = minMax.get(axisId).getMinimum();
@@ -185,8 +185,8 @@ public class ParallelCoordinatesChart extends HighDimensionalChart {
             // Buttons
             Button btnInvert = new Button();
             btnInvert.setStyle("-fx-faint-focus-color: transparent; -fx-focus-color: -fx-outer-border, -fx-inner-border, -fx-body-color; -fx-effect: null;");
-            btnInvert.setGraphic(new ImageView(!pcAxis.isInverted() ? btnInvertDownImg : btnInvertUpImg));
-            DoubleBinding invertBtnPosition = trueAxisSeparation.subtract(btnInvert.widthProperty().divide(2));
+            btnInvert.setGraphic(new ImageView(!pcAxis.isInverted() ? btnInvertUpImg : btnInvertDownImg));
+            DoubleBinding invertBtnPosition = currAxisPosition.subtract(btnInvert.widthProperty().divide(2));
             btnInvert.translateXProperty().bind(invertBtnPosition);
             btnInvert.setMinHeight(BUTTON_MIN_HEIGHT);
             btnInvert.setMaxHeight(BUTTON_MIN_HEIGHT);
@@ -208,7 +208,7 @@ public class ParallelCoordinatesChart extends HighDimensionalChart {
             numberAxis.setSide(Side.LEFT);
             numberAxis.setMinorTickVisible(false);
             numberAxis.setAnimated(false);
-            numberAxis.translateXProperty().bind(trueAxisSeparation);
+            numberAxis.translateXProperty().bind(currAxisPosition);
             DoubleBinding heightButton = btnInvert.heightProperty().add(BUTTON_MARGIN);
             numberAxis.translateYProperty().bind(heightButton);
             DoubleBinding innerHeightWithoutButton = innerHeightProperty().subtract(heightButton).multiply(1 - legend_height_relative * show_legend);
@@ -226,7 +226,7 @@ public class ParallelCoordinatesChart extends HighDimensionalChart {
                 labelNode.setMinWidth(labelMinWidth);
                 labelNode.setAlignment(Pos.CENTER);
                 box = new HBox(labelNode);
-                box.translateXProperty().bind(trueAxisSeparation.subtract(labelMinWidth / 2));
+                box.translateXProperty().bind(currAxisPosition.subtract(labelMinWidth / 2));
                 box.translateYProperty().bind(innerHeightProperty.subtract(labelYOffset).multiply(1 - legend_height_relative * show_legend * .85));
 
                 getChartChildren().add(box);
@@ -235,34 +235,7 @@ public class ParallelCoordinatesChart extends HighDimensionalChart {
             // filters
             RangeSlider vSlider = null;
             if (useAxisFilters) {
-
-                // using bounds from 1.0 to 0.0 should work as we draw in this space anyway
-                vSlider = new RangeSlider(0.0, 1.0, 0.0, 1.0);
-                vSlider.setOrientation(Orientation.VERTICAL);
-                vSlider.setShowTickLabels(false);
-                vSlider.setShowTickMarks(false);
-                vSlider.translateXProperty().bind(trueAxisSeparation);
-                vSlider.translateYProperty().bind(btnInvert.heightProperty().add(BUTTON_MARGIN));
-                vSlider.getProperties().put("axis", pcAxis.getId());
-                addFilterListeners(vSlider);
-
-                getChartChildren().add(vSlider);
-
-                // have to style after adding it (CSS wouldn't be accessible otherwise)
-                vSlider.applyCss();
-                vSlider.lookup(".range-slider .track").setStyle("-fx-opacity: 0;");
-                // TODO fix range-bar gap
-                vSlider.lookup(".range-slider .range-bar").setStyle("-fx-opacity: 0.15;");
-                vSlider.lookup(".range-slider .range-bar").setDisable(true);
-                vSlider.lookup(".range-slider .low-thumb").setStyle("-fx-shape: \"M150 0 L75 200 L225 200 Z\"; -fx-scale-y: 0.5; -fx-translate-y: 5; -fx-scale-x:1.3;");
-                vSlider.lookup(".range-slider .high-thumb").setStyle("-fx-shape: \"M75 0 L225 0 L150 200 Z\"; -fx-scale-y: 0.5; -fx-translate-y: -5; -fx-scale-x:1.3;");
-
-                vSlider.setOnMouseClicked(new EventHandler<MouseEvent>() {
-                    @Override
-                    public void handle(MouseEvent mouseEvent) {
-                        mouseEvent.consume();
-                    }
-                });
+                vSlider = setUpFilterSlider(pcAxis, currAxisPosition, btnInvert.heightProperty().add(BUTTON_MARGIN));
             }
 
             btnInvert.setOnAction(event -> {
@@ -274,34 +247,77 @@ public class ParallelCoordinatesChart extends HighDimensionalChart {
 
             btnRight.setOnAction(event -> {
                 // redraws everything by hard right now
-                // TODO moveAxes: in the future, this should be replaced by something better performing
                 int newIndex = pcAxis.getAxisIndex() == (numAxes - 1) ? 0 : pcAxis.getAxisIndex() + 1;
-                //getChartChildren().remove(paneControls);
                 moveAxis(pcAxis.getAxisIndex(), newIndex);
             });
 
             btnLeft.setOnAction(event -> {
                 // redraws everything by hard right now
-                // TODO moveAxes: in the future, this should be replaced by something better performing
                 int newIndex = pcAxis.getAxisIndex() == 0 ? numAxes - 1 : pcAxis.getAxisIndex() - 1;
-                //getChartChildren().remove(paneControls);
                 moveAxis(pcAxis.getAxisIndex(), newIndex);
             });
 
             pcAxis.initialize(numberAxis, label, box, vSlider, btnInvert, btnLeft, btnRight);
-            registerDragAndDropListeners(pcAxis, paneControls, trueAxisSeparation, btnInvert.translateYProperty());
+            registerDragAndDropListeners(pcAxis, box.getTranslateY(), paneControls, currAxisPosition, btnInvert.translateYProperty());
         }
         // register listener for last axis on its right
-        registerDragAndDropListeners(null, paneControls, getAxisSeparationBinding().multiply(numAxes + 1), paneControls.getChildren().get(0).translateYProperty());
+        HBox box = axes.get(0).getLabelBox();
+        registerDragAndDropListeners(null, box.getTranslateY(), paneControls, getAxisSeparationBinding().multiply(numAxes + 1), paneControls.getChildren().get(0).translateYProperty());
 
         resizeAxes();
     }
 
-    private void registerDragAndDropListeners(ParallelCoordinatesAxis pcAxis, Pane buttonPane, DoubleBinding trueAxisSeparation, DoubleProperty yProperty) {
+    /**
+     * Creates an RangeSlider for a ParallelCoordinatesAxis which is used for filtering the data
+     *
+     * @param pcAxis   the axis for which the range slider is drawn
+     * @param xBinding translateX of the range slider
+     * @param yBinding translateY of the range slider
+     * @return a range slider ui element which is drawn at the respective axis postiion
+     */
+    protected RangeSlider setUpFilterSlider(ParallelCoordinatesAxis pcAxis, DoubleBinding xBinding, DoubleBinding yBinding) {
+        RangeSlider vSlider = setUpFilterSlider(pcAxis.getId());
+        vSlider.translateXProperty().bind(xBinding);
+        vSlider.translateYProperty().bind(yBinding);
+
+        return vSlider;
+    }
+
+    protected RangeSlider setUpFilterSlider(int id) {
+        // using bounds from 1.0 to 0.0 should work as we draw in this space anyway
+        RangeSlider vSlider = new RangeSlider(0.0, 1.0, 0.0, 1.0);
+        vSlider.setOrientation(Orientation.VERTICAL);
+        vSlider.setShowTickLabels(false);
+        vSlider.setShowTickMarks(false);
+        vSlider.getProperties().put("axis", id);
+        addFilterListeners(vSlider);
+
+        getChartChildren().add(vSlider);
+
+        // have to style after adding it (CSS wouldn't be accessible otherwise)
+        vSlider.applyCss();
+        vSlider.lookup(".range-slider .track").setStyle("-fx-opacity: 0;");
+        // TODO fix range-bar gap
+        vSlider.lookup(".range-slider .range-bar").setStyle("-fx-opacity: 0.15;");
+        vSlider.lookup(".range-slider .range-bar").setDisable(true);
+        vSlider.lookup(".range-slider .low-thumb").setStyle("-fx-shape: \"M150 0 L75 200 L225 200 Z\"; -fx-scale-y: 0.5; -fx-translate-y: 5; -fx-scale-x:1.3;");
+        vSlider.lookup(".range-slider .high-thumb").setStyle("-fx-shape: \"M75 0 L225 0 L150 200 Z\"; -fx-scale-y: 0.5; -fx-translate-y: -5; -fx-scale-x:1.3;");
+
+        vSlider.setOnMouseClicked(new EventHandler<MouseEvent>() {
+            @Override
+            public void handle(MouseEvent mouseEvent) {
+                mouseEvent.consume();
+            }
+        });
+
+        return vSlider;
+    }
+
+    private void registerDragAndDropListeners(ParallelCoordinatesAxis pcAxis, double heightDragDropLabel, Pane buttonPane, DoubleBinding trueAxisSeparation, DoubleProperty yProperty) {
         DragAndDropLabel labelDragAndDrop = new DragAndDropLabel(new Background(new BackgroundFill(Color.BLUE, CornerRadii.EMPTY, Insets.EMPTY)));
         DoubleBinding axisSeparation = getAxisSeparationBinding();
         labelDragAndDrop.prefWidthProperty().bind(axisSeparation);
-        labelDragAndDrop.prefHeightProperty().bind(innerHeightProperty());
+        labelDragAndDrop.setPrefHeight(heightDragDropLabel);//innerHeightProperty().multiply(1 - legend_height_relative * show_legend));
         labelDragAndDrop.translateXProperty().bind(trueAxisSeparation.subtract(axisSeparation));
         labelDragAndDrop.translateYProperty().bind(yProperty);
 
@@ -358,17 +374,17 @@ public class ParallelCoordinatesChart extends HighDimensionalChart {
                 if (deltaPosition > 0) {
                     // move pcAxis left, move all others right
                     if (oldIndex < axisIndex && axisIndex <= newIndex) {
-                        axis.moveToPosition(axisIndex - 1, axes);
+                        axis.setAxisIndex(axisIndex - 1);
                     }
                 } else {
                     // move pcAxis right, move all others right
                     if (oldIndex > axisIndex && axisIndex >= newIndex) {
-                        axis.moveToPosition(axisIndex + 1, axes);
+                        axis.setAxisIndex(axisIndex + 1);
                     }
                 }
             }
         }
-        currAxis.moveToPosition(newIndex, axes);
+        currAxis.setAxisIndex(newIndex);
 
         // refreshUI
         removeAxesFromChartChildren();
@@ -382,11 +398,10 @@ public class ParallelCoordinatesChart extends HighDimensionalChart {
      * TODO moveAxes: in the future, this should be replaced by something better performing (or be doing more)
      */
     public void swapAxes(int oldIndex, int newIndex) {
-        int deltaPosition = newIndex - oldIndex;
         ParallelCoordinatesAxis currAxis = getAxisByIndex(oldIndex);
         ParallelCoordinatesAxis swapAxis = getAxisByIndex(newIndex);
-        currAxis.moveToPosition(newIndex, axes);
-        swapAxis.moveToPosition(oldIndex, axes);
+        currAxis.setAxisIndex(newIndex);
+        swapAxis.setAxisIndex(oldIndex);
 
         // refreshUI
         removeAxesFromChartChildren();
@@ -504,10 +519,6 @@ public class ParallelCoordinatesChart extends HighDimensionalChart {
                 // TODO investigate why this is necessary
                 if (r.getValues().get(axisId) == null)
                     continue;
-
-                // we cannot skip lines which are already hidden here (causes a bug with brushing)
-//				if(!r.isVisible())
-//					continue;
 
                 double recordValue = (double) r.getValues().get(axisId);
                 if (!isHighValue && recordValue < filterValue || isHighValue && recordValue > filterValue) {
@@ -762,74 +773,7 @@ public class ParallelCoordinatesChart extends HighDimensionalChart {
     }
 
     /**
-     * Binds a given series to the chart content, and adds it to its chartChildren
-     *
-     * @param s the series which the chart adds and binds to its content
-     */
-    @Deprecated
-    protected void bindSeriesPath(Series s) {
-     /*   // easier and more performant to simply sort the axes right away instead of crawling the map
-        List<ParallelCoordinatesAxis> axesSorted = getAxesInOrder();
-
-        DoubleProperty yStartAxes = axes.get(0).getAxis().translateYProperty(); // starting point of axes
-        DoubleBinding axisSeparation = getAxisSeparationBinding();
-        DoubleBinding heightProp = innerHeightProperty().subtract(yStartAxes).multiply(1 - legend_height_relative);
-
-        Double value;
-        Object dataPoint;
-        //int numRecords = s.getRecords().size();
-        int numColumns = getAttributeCount();
-        //System.out.println("cols:" + numColumns + "records" + numRecords);
-        for (Record record : s.getRecords()) {
-            Path path = new Path();
-            MoveTo moveTo = new MoveTo();
-            dataPoint = record.getAttByIndex(axesSorted.get(0).getId());
-            value = (Double) dataPoint;
-            // for first data point, use moveto not lineto
-            // this has to be refactored when moving axes
-            moveTo.xProperty().bind(axisSeparation);
-            moveTo.yProperty().bind(getValueOnAxis(yStartAxes, heightProp, value, axesSorted.get(0)));
-            path.getElements().add(moveTo);
-
-            for (int curr = 1; curr < numColumns; curr++) {
-                ParallelCoordinatesAxis currAxis = axesSorted.get(curr);
-                dataPoint = record.getAttByIndex(currAxis.getId());
-
-                if (dataPoint instanceof String) {
-                    break;
-                }
-
-                value = (Double) dataPoint;
-                if (value != null) {
-                    LineTo lineTo = new LineTo();
-                    lineTo.xProperty().bind(axisSeparation.add(axisSeparation.multiply(curr)));
-                    lineTo.yProperty().bind(getValueOnAxis(yStartAxes, heightProp, value, currAxis));
-                    path.getElements().add(lineTo);
-                }
-            }
-
-            //handled by record.drawByStatus()
-//            path.setStroke(s.getColor());
-//            path.setOpacity(s.getOpacity());
-//            path.setStrokeWidth(pathStrokeWidth);
-
-            if (useHighlighting)
-                setupHighlightingEvents(path);
-
-            record.setPath(path);
-            record.drawByStatus(this);
-
-            path.getProperties().put("record", record);
-            path.setCache(true);
-            path.setCacheHint(CacheHint.SPEED);
-
-            getChartChildren().add(path);
-        }*/
-    }
-
-
-    /**
-     * Helper method for getting axes in correct display order
+     * Helper method for sorting axes in correct display order
      */
     private List<ParallelCoordinatesAxis> getAxesInOrder() {
         List<ParallelCoordinatesAxis> sortedAxes = new ArrayList<>(axes.values());
@@ -919,7 +863,6 @@ public class ParallelCoordinatesChart extends HighDimensionalChart {
 
             brushingRectangle.setX(brushingRectangleX);
             brushingRectangle.setY(brushingRectangleY);
-
         });
 
         setOnMouseDragged((MouseEvent event) -> {
@@ -935,7 +878,6 @@ public class ParallelCoordinatesChart extends HighDimensionalChart {
                 brushingRectangle.setHeight(-brushingRectangle.getHeight());
                 brushingRectangle.setY(brushingRectangleY - brushingRectangle.getHeight());
             }
-
             //doesn't work as it doesn't catch every intersection
 //			if(event.getPickResult().getIntersectedNode() instanceof Path) {
 //				Path path = (Path)event.getPickResult().getIntersectedNode();
@@ -1112,7 +1054,7 @@ public class ParallelCoordinatesChart extends HighDimensionalChart {
 
 
     public void drawLegend() {
-        if(show_legend == 1) {
+        if (show_legend == 1) {
 
             DoubleBinding legendSeparation = innerWidthProperty().divide(series.size() + 1);
             DoubleBinding heightProp = innerHeightProperty().multiply(1);
