@@ -3,7 +3,7 @@
 <?import javafx.scene.control.*?>
 <?import javafx.scene.layout.*?>
 <?import tugraz.ivis.parcoord.chart.ParallelCoordinatesChart?>
-<AnchorPane maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="600.0"
+<AnchorPane maxHeight="-Infinity" maxWidth="-Infinity" minHeight="600.0" minWidth="1000.0" prefHeight="600.0"
             prefWidth="1000.0" xmlns:tugraz.ivis.parcoord.chart="http://javafx.com/javafx/8.0.112"
             xmlns="http://javafx.com/javafx/8.0.112" xmlns:fx="http://javafx.com/fxml/1"
             fx:controller="tugraz.ivis.parcoord.Controller">
@@ -21,14 +21,15 @@
                         <Menu mnemonicParsing="false" text="Chart">
                             <items>
                                 <MenuItem mnemonicParsing="false" onAction="#onResetBrushing" text="Reset brushing"/>
-                                <RadioMenuItem fx:id="toggle_legend" disable="true" text="Legend" selected="true" onAction="#toggleLegend"/>
+                                <RadioMenuItem fx:id="toggle_legend" disable="true" text="Legend" selected="true"
+                                               onAction="#toggleLegend"/>
                             </items>
                         </Menu>
                         <Menu mnemonicParsing="false" text="Help">
-                        <items>
-                            <MenuItem mnemonicParsing="false" onAction="#onShowInfo" text="About"/>
-                        </items>
-                    </Menu>
+                            <items>
+                                <MenuItem mnemonicParsing="false" onAction="#onShowInfo" text="About"/>
+                            </items>
+                        </Menu>
                     </menus>
                 </MenuBar>
             </top>

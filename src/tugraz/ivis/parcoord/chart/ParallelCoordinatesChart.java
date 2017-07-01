@@ -13,6 +13,7 @@ import javafx.scene.CacheHint;
 import javafx.scene.canvas.Canvas;
 import javafx.scene.canvas.GraphicsContext;
 import javafx.scene.chart.NumberAxis;
+import javafx.scene.control.Alert;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.image.Image;
@@ -38,8 +39,8 @@ public class ParallelCoordinatesChart extends HighDimensionalChart {
 
     private double pathStrokeWidth = 1.0;
 
-    private int show_legend = 1;
-    private double legend_height_relative = 0.1;
+    private boolean legendVisible = true;
+    private double legendHeightRelative = 0.1;
 
     private boolean useHighlighting = true;
     private double highlightOpacity = 1.0;
@@ -69,7 +70,7 @@ public class ParallelCoordinatesChart extends HighDimensionalChart {
 
 
     @Override
-    public void updateChartForNewSeries() {
+    public void redrawAllSeries() {
         getChartChildren().remove(canvas);
         canvas = new Canvas();
         getChartChildren().add(canvas);
@@ -211,7 +212,7 @@ public class ParallelCoordinatesChart extends HighDimensionalChart {
             numberAxis.translateXProperty().bind(currAxisPosition);
             DoubleBinding heightButton = btnInvert.heightProperty().add(BUTTON_MARGIN);
             numberAxis.translateYProperty().bind(heightButton);
-            DoubleBinding innerHeightWithoutButton = innerHeightProperty().subtract(heightButton).multiply(1 - legend_height_relative * show_legend);
+            DoubleBinding innerHeightWithoutButton = innerHeightProperty().subtract(heightButton).multiply(1 - getLegendHeightRelative());
             numberAxis.tickUnitProperty().bind(
                     innerHeightWithoutButton.divide(innerHeightWithoutButton).divide(innerHeightWithoutButton)
                             .multiply(spaceBetweenTicks).multiply(delta));
@@ -227,7 +228,7 @@ public class ParallelCoordinatesChart extends HighDimensionalChart {
                 labelNode.setAlignment(Pos.CENTER);
                 box = new HBox(labelNode);
                 box.translateXProperty().bind(currAxisPosition.subtract(labelMinWidth / 2));
-                box.translateYProperty().bind(innerHeightProperty.subtract(labelYOffset).multiply(1 - legend_height_relative * show_legend * .85));
+                box.translateYProperty().bind(innerHeightProperty.subtract(labelYOffset).multiply(1 - getLegendHeightRelative() * .85));
 
                 getChartChildren().add(box);
             }
@@ -241,7 +242,7 @@ public class ParallelCoordinatesChart extends HighDimensionalChart {
             btnInvert.setOnAction(event -> {
                 pcAxis.invert();
                 btnInvert.setGraphic(new ImageView(!pcAxis.isInverted() ? btnInvertDownImg : btnInvertUpImg));
-                updateChartForNewSeries();
+                redrawAllSeries();
                 reorder();
             });
 
@@ -317,7 +318,7 @@ public class ParallelCoordinatesChart extends HighDimensionalChart {
         DragAndDropLabel labelDragAndDrop = new DragAndDropLabel(new Background(new BackgroundFill(Color.BLUE, CornerRadii.EMPTY, Insets.EMPTY)));
         DoubleBinding axisSeparation = getAxisSeparationBinding();
         labelDragAndDrop.prefWidthProperty().bind(axisSeparation);
-        labelDragAndDrop.setPrefHeight(heightDragDropLabel);//innerHeightProperty().multiply(1 - legend_height_relative * show_legend));
+        labelDragAndDrop.setPrefHeight(heightDragDropLabel);//innerHeightProperty().multiply(1 - legendHeightRelative * legendVisible));
         labelDragAndDrop.translateXProperty().bind(trueAxisSeparation.subtract(axisSeparation));
         labelDragAndDrop.translateYProperty().bind(yProperty);
 
@@ -389,7 +390,7 @@ public class ParallelCoordinatesChart extends HighDimensionalChart {
         // refreshUI
         removeAxesFromChartChildren();
         bindAxes();
-        updateChartForNewSeries();
+        redrawAllSeries();
         reorder();
     }
 
@@ -406,7 +407,7 @@ public class ParallelCoordinatesChart extends HighDimensionalChart {
         // refreshUI
         removeAxesFromChartChildren();
         bindAxes();
-        updateChartForNewSeries();
+        redrawAllSeries();
         reorder();
     }
 
@@ -501,7 +502,7 @@ public class ParallelCoordinatesChart extends HighDimensionalChart {
                 filterOutLines(axisId, newV, false);
             }
         }
-        updateChartForNewSeries();
+        redrawAllSeries();
         //System.out.println("Old: " + Double.toString(oldV) + "; New: " + Double.toString(newV));
     }
 
@@ -614,10 +615,10 @@ public class ParallelCoordinatesChart extends HighDimensionalChart {
     protected void resizeAxes() {
         for (ParallelCoordinatesAxis axis : axes.values()) {
             double buttonHeight = getButtonPaneOffset();
-            axis.getAxis().resize(1.0, (innerHeightProperty.doubleValue() - buttonHeight) * (1 - legend_height_relative * show_legend));
+            axis.getAxis().resize(1.0, (innerHeightProperty.doubleValue() - buttonHeight) * (1 - getLegendHeightRelative()));
 
             if (axis.getFilterSlider() != null)
-                axis.getFilterSlider().resize(1.0, (innerHeightProperty.doubleValue() - buttonHeight) * (1 - legend_height_relative * show_legend));
+                axis.getFilterSlider().resize(1.0, (innerHeightProperty.doubleValue() - buttonHeight) * (1 - getLegendHeightRelative()));
         }
     }
 
@@ -662,8 +663,7 @@ public class ParallelCoordinatesChart extends HighDimensionalChart {
             }
         }
 
-        //TODO remove -1 after categorial data has been handled
-        return valueCount - 1;
+        return valueCount;
     }
 
     @Override
@@ -673,7 +673,7 @@ public class ParallelCoordinatesChart extends HighDimensionalChart {
             this.width = (int) width;
             innerWidthProperty.set(width);
             innerHeightProperty.set(height);
-            updateChartForNewSeries();
+            redrawAllSeries();
             resizeAxes();
         }
     }
@@ -694,7 +694,7 @@ public class ParallelCoordinatesChart extends HighDimensionalChart {
 
         double yStartAxes = getButtonPaneOffset(); // starting point of axes
         DoubleBinding axisSeparation = getAxisSeparationBinding();
-        DoubleBinding heightProp = innerHeightProperty().subtract(yStartAxes).multiply(1 - legend_height_relative * show_legend);
+        DoubleBinding heightProp = innerHeightProperty().subtract(yStartAxes).multiply(1 - getLegendHeightRelative());
 
         Double valueStart;
         Double valueEnd;
@@ -705,7 +705,10 @@ public class ParallelCoordinatesChart extends HighDimensionalChart {
         canvas.toBack();
         GraphicsContext gc = canvas.getGraphicsContext2D();
         gc.setLineWidth(getPathStrokeWidth());
+        int columnError = -1;
+        int row = 0;
         for (Record record : s.getRecords()) {
+            row++; // for error dialog
             gc.beginPath();
             Path shadowPath = new Path();
             shadowPath.setStroke(s.getColor());
@@ -730,18 +733,31 @@ public class ParallelCoordinatesChart extends HighDimensionalChart {
                 dataPointStart = record.getAttByIndex(beforeAxis.getId());
                 dataPointEnd = record.getAttByIndex(currAxis.getId());
 
+                // error checks for data
+                if (dataPointStart instanceof String) {
+                    columnError = curr - 1;
+                } else if (dataPointEnd instanceof String) {
+                    columnError = curr;
+                }
+
+                if (columnError > -1) {
+                    showErrorDialog("Error while drawing series",
+                            String.format("Found non-numeric data in column %d of row %d",
+                                    columnError, row));
+                }
+
+                // === Draw values
                 valueStart = (Double) dataPointStart;
                 valueEnd = (Double) dataPointEnd;
 
-                // for first data point, use moveto not lineto
-                // this has to be refactored when moving axes
-                //    System.out.println("curr " + curr + " before " + (curr - 1));
                 if (dataPointEnd != null && dataPointStart != null) {
                     Double[] coordinates = new Double[]{
                             axisSeparation.multiply(curr).doubleValue(), getValueOnAxis(yStartAxes, heightProp, valueStart, beforeAxis).doubleValue(),
                             axisSeparation.add(axisSeparation.multiply(curr)).doubleValue(), getValueOnAxis(yStartAxes, heightProp, valueEnd, currAxis).doubleValue()
                     };
 
+                    // create the invisible path used for interaction
+                    // for first data point, use moveto not lineto
                     if (curr - 1 == 0) {
                         MoveTo moveTo = new MoveTo();
                         moveTo.setX(coordinates[0]);
@@ -753,12 +769,12 @@ public class ParallelCoordinatesChart extends HighDimensionalChart {
                         lineTo.setY(coordinates[1]);
                         shadowPath.getElements().add(lineTo);
                     }
-
                     LineTo lineTo = new LineTo();
                     lineTo.setX(coordinates[2]);
                     lineTo.setY(coordinates[3]);
                     shadowPath.getElements().add(lineTo);
 
+                    // draw on the canvas, if record is visible
                     if (record.isVisible()) {
                         Color sColor = s.getColor();
                         gc.setStroke(new Color(sColor.getRed(), sColor.getGreen(), sColor.getBlue(), s.getOpacity()));
@@ -767,9 +783,22 @@ public class ParallelCoordinatesChart extends HighDimensionalChart {
                     }
                 }
             }
-            shadowPath.toFront();
         }
-        reorder();
+        reorder(); // move up axes pack to front, so lines dont overlap
+    }
+
+    /**
+     * Displays an error dialog to the user
+     *
+     * @param headerText  the header of the dialog
+     * @param contentText the textual main content of the dialog
+     */
+    private void showErrorDialog(String headerText, String contentText) {
+        Alert alert = new Alert(Alert.AlertType.ERROR);
+        alert.setTitle("Error");
+        alert.setHeaderText(headerText);
+        alert.setContentText(contentText);
+        alert.show();
     }
 
     /**
@@ -929,7 +958,7 @@ public class ParallelCoordinatesChart extends HighDimensionalChart {
                 r.drawByStatus(this);
             }
         }
-        updateChartForNewSeries();
+        redrawAllSeries();
     }
 
     /**
@@ -950,7 +979,7 @@ public class ParallelCoordinatesChart extends HighDimensionalChart {
 //    			}
             }
         }
-        updateChartForNewSeries();
+        redrawAllSeries();
     }
 
 
@@ -1054,14 +1083,14 @@ public class ParallelCoordinatesChart extends HighDimensionalChart {
 
 
     public void drawLegend() {
-        if (show_legend == 1) {
+        if (legendVisible) {
 
             DoubleBinding legendSeparation = innerWidthProperty().divide(series.size() + 1);
             DoubleBinding heightProp = innerHeightProperty().multiply(1);
             DoubleBinding widthProp = innerWidthProperty().multiply(1);
 
-            DoubleBinding heightPropLegendBorder = innerHeightProperty().multiply(1 - legend_height_relative / 2);
-            DoubleBinding heightPropLegend = innerHeightProperty().multiply(1 - legend_height_relative / 4);
+            DoubleBinding heightPropLegendBorder = innerHeightProperty().multiply(1 - legendHeightRelative / 2);
+            DoubleBinding heightPropLegend = innerHeightProperty().multiply(1 - legendHeightRelative / 4);
 
 
             Path path = new Path();
@@ -1133,11 +1162,14 @@ public class ParallelCoordinatesChart extends HighDimensionalChart {
             return;
 
         getChartChildren().clear();
-        show_legend = 1 - show_legend;
-        updateChartForNewSeries();
-        updateBounds();
+        legendVisible = !legendVisible;
         bindAxes();
         drawLegend();
+        redrawAllSeries();
+    }
+
+    public double getLegendHeightRelative() {
+        return legendVisible ? legendHeightRelative : 0;
     }
 
 

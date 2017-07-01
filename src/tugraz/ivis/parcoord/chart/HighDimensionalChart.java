@@ -126,7 +126,7 @@ public abstract class HighDimensionalChart extends Chart implements Brushable {
 
         bindSeries(s);
         // TODO: why is this needed?
-        updateChartForNewSeries();
+        redrawAllSeries();
         reorder();
     }
 
@@ -249,5 +249,5 @@ public abstract class HighDimensionalChart extends Chart implements Brushable {
      */
     protected abstract void reorder();
 
-    protected abstract void updateChartForNewSeries();
+    protected abstract void redrawAllSeries();
 }

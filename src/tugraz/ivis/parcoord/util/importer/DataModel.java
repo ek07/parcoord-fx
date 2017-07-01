@@ -157,6 +157,7 @@ public final class DataModel {
             }
 
             while ((next = in.readLine()) != null) {
+                nrItems++;
                 values = next.split(delimiter);
                 for (int i = 0; i < values.length; i++) {
                     if (values[i].length() > 0 && !values[i].contains("?")) {    // && values[i].matches("([0-9]*)\\\\.[0]")
@@ -167,7 +168,6 @@ public final class DataModel {
                             minMaxValues.get(i)[1] = (minMaxValues.get(i)[1] < value) ? value : minMaxValues.get(i)[1];     //max
                         } else {
                             dataSet[i].add(values[i]);
-                            nrItems++;
                         }
                     } //for iris data set no class information!
                     else {

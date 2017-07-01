@@ -251,7 +251,7 @@ public class ParallelCoordinatesAxis {
                 }
 
                 // call original formatter with inverted value
-                return "";//super.toString(new Double(val));
+                return super.toString(new Double(val));
             }
         });
     }
