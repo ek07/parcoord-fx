@@ -99,8 +99,8 @@ public class Record {
      *
      * @param chart The chart the record is contained in
      */
-    public void drawByStatus(ParallelCoordinatesChart chart) {
-        drawByStatus(chart, false);
+    public void updateStatus(ParallelCoordinatesChart chart) {
+        updateStatus(chart, false);
     }
 
     /**
@@ -111,7 +111,7 @@ public class Record {
      * @param tempHighlight Whether highlighting is temporal and should be drawn regardless
      *                      of highlighting Status
      */
-    public void drawByStatus(ParallelCoordinatesChart chart, boolean tempHighlight) {
+    public void updateStatus(ParallelCoordinatesChart chart, boolean tempHighlight) {
         if (!isVisible()) {
             path.setOpacity(chart.getFilteredOutOpacity());
         } else if (highlightingStatus == Status.VISIBLE || tempHighlight) {

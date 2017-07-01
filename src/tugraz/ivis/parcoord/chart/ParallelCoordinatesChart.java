@@ -524,7 +524,7 @@ public class ParallelCoordinatesChart extends HighDimensionalChart {
                 double recordValue = (double) r.getValues().get(axisId);
                 if (!isHighValue && recordValue < filterValue || isHighValue && recordValue > filterValue) {
                     r.setAxisFilterStatus(Record.Status.OPAQUE);
-                    r.drawByStatus(this);
+                    r.updateStatus(this);
                 }
             }
         }
@@ -576,7 +576,7 @@ public class ParallelCoordinatesChart extends HighDimensionalChart {
                     if (visible) {
                         // we can now set it to visible according to filter criteria
                         r.setAxisFilterStatus(Record.Status.VISIBLE);
-                        r.drawByStatus(this);
+                        r.updateStatus(this);
                     }
                 }
             }
@@ -717,7 +717,7 @@ public class ParallelCoordinatesChart extends HighDimensionalChart {
 
             shadowPath.setCacheHint(CacheHint.SPEED);
             record.setPath(shadowPath);
-            record.drawByStatus(this);
+            record.updateStatus(this);
 
             if (useHighlighting) {
                 setupHighlightingEvents(shadowPath);
@@ -854,7 +854,7 @@ public class ParallelCoordinatesChart extends HighDimensionalChart {
                     record.getPath().toFront();
                 }
 
-                record.drawByStatus(this);
+                record.updateStatus(this);
             }
         });
 
@@ -864,14 +864,14 @@ public class ParallelCoordinatesChart extends HighDimensionalChart {
             Path src = (Path) event.getSource();
             Record record = (Record) src.getProperties().get("record");
 
-            record.drawByStatus(this, true);
+            record.updateStatus(this, true);
         });
 
         path.setOnMouseExited((MouseEvent event) -> {
             Path src = (Path) event.getSource();
             Record record = (Record) src.getProperties().get("record");
 
-            record.drawByStatus(this);
+            record.updateStatus(this);
         });
     }
 
@@ -880,8 +880,17 @@ public class ParallelCoordinatesChart extends HighDimensionalChart {
      */
     public void enableBrushing() {
         initializeBrushingRectangle();
+        final Canvas brushingCanvas = new Canvas();
+        getChartChildren().add(brushingCanvas);
+        final GraphicsContext gc = brushingCanvas.getGraphicsContext2D();
+        final DoubleBinding axisSeparation = getAxisSeparationBinding();
 
         setOnMousePressed((MouseEvent event) -> {
+            brushingCanvas.setWidth(canvas.getWidth());
+            brushingCanvas.setHeight(canvas.getHeight());
+            brushingCanvas.setTranslateY(canvas.getTranslateY());
+            brushingCanvas.setTranslateX(canvas.getTranslateX());
+
             //reset the rectangle
             brushingRectangle.setWidth(0.0);
             brushingRectangle.setHeight(0.0);
@@ -895,6 +904,8 @@ public class ParallelCoordinatesChart extends HighDimensionalChart {
         });
 
         setOnMouseDragged((MouseEvent event) -> {
+            gc.clearRect(0, 0, canvas.getWidth(), canvas.getHeight());
+
             brushingRectangle.setWidth(event.getX() - brushingRectangleX);
             brushingRectangle.setHeight(event.getY() - brushingRectangleY);
 
@@ -907,24 +918,73 @@ public class ParallelCoordinatesChart extends HighDimensionalChart {
                 brushingRectangle.setHeight(-brushingRectangle.getHeight());
                 brushingRectangle.setY(brushingRectangleY - brushingRectangle.getHeight());
             }
-            //doesn't work as it doesn't catch every intersection
-//			if(event.getPickResult().getIntersectedNode() instanceof Path) {
-//				Path path = (Path)event.getPickResult().getIntersectedNode();
-//				path.setStroke(Color.RED);
-//			}
+
+            handleCurrentBrushing(gc, brushingRectangle, axisSeparation);
         });
 
         setOnMouseReleased((MouseEvent event) -> {
-            brushingRectangle.setVisible(false);
+            gc.clearRect(0, 0, canvas.getWidth(), canvas.getHeight());
 
             //dismiss small rectangles
             if (brushingRectangle.getWidth() < 7.5 && brushingRectangle.getHeight() < 7.5)
                 return;
 
-            //handle brushing
             handleBrushing();
-            //   brushingExecutor.submit(() -> handleBrushing());
         });
+    }
+
+    /**
+     * Resets the brushingCanvas and draws all currently brushed lines with full opacity
+     *
+     * @param gc                the GraphicsContext of the brushingCanvas
+     * @param brushingRectangle Rectangle which represents the current brushing selection
+     * @param axisSeparation    the axis Separation used to draw the lines
+     */
+    private void handleCurrentBrushing(GraphicsContext gc, Rectangle brushingRectangle, DoubleBinding axisSeparation) {
+        brushingRectangle.setVisible(false);
+        ArrayList<Record> brushedRecords = new ArrayList<>();
+        for (Series s : series) {
+            for (Record r : s.getRecords()) {
+                //skip lines which are not visible
+                if (!r.isVisible())
+                    continue;
+
+                Shape intersection = Shape.intersect(r.getPath(), brushingRectangle);
+                if (intersection.getBoundsInParent().intersects(getBoundsInLocal())) {
+                    brushedRecords.add(r);
+                }
+            }
+        }
+        // easier and more performant to simply sort the axes right away instead of crawling the map
+        List<ParallelCoordinatesAxis> axesSorted = getAxesInOrder();
+        Double valueStart;
+        Double valueEnd;
+
+        double yStartAxes = getButtonPaneOffset(); // starting point of axes
+        DoubleBinding heightProp = innerHeightProperty().subtract(yStartAxes).multiply(1 - getLegendHeightRelative());
+
+        for (Record record : brushedRecords) {
+            for (int curr = 1; curr < getAttributeCount(); curr++) {
+                ParallelCoordinatesAxis beforeAxis = axesSorted.get(curr - 1);
+                ParallelCoordinatesAxis currAxis = axesSorted.get(curr);
+                valueStart = (Double) record.getAttByIndex(beforeAxis.getId());
+                valueEnd = (Double) record.getAttByIndex(currAxis.getId());
+
+                if (valueStart != null && valueEnd != null) {
+                    if (record.isVisible()) {
+                        Series s = record.getSeries();
+                        Color sColor = s.getColor();
+                        gc.setStroke(new Color(sColor.getRed(), sColor.getGreen(), sColor.getBlue(), 1));
+                        gc.setLineWidth(record.getPath().getStrokeWidth());
+                        gc.strokeLine(
+                                axisSeparation.multiply(curr).doubleValue(),
+                                getValueOnAxis(yStartAxes, heightProp, valueStart, beforeAxis).doubleValue(),
+                                axisSeparation.add(axisSeparation.multiply(curr)).doubleValue(),
+                                getValueOnAxis(yStartAxes, heightProp, valueEnd, currAxis).doubleValue());
+                    }
+                }
+            }
+        }
     }
 
     /**
@@ -942,6 +1002,8 @@ public class ParallelCoordinatesChart extends HighDimensionalChart {
      * Handles brushing given that the brushingRectangle is present and set correctly.
      */
     private void handleBrushing() {
+        List<Record> opaqueRecords = new ArrayList<>(); // list of "invisible" records
+        int totalRecords = 0;
         for (Series s : series) {
             for (Record r : s.getRecords()) {
                 //skip lines which are not visible
@@ -952,10 +1014,19 @@ public class ParallelCoordinatesChart extends HighDimensionalChart {
                 if (intersection.getBoundsInParent().intersects(getBoundsInLocal())) {
                     //collision detected
                     r.setBrushingStatus(Status.VISIBLE);
+                    r.updateStatus(this);
                 } else {
-                    r.setBrushingStatus(Status.OPAQUE);
+                    opaqueRecords.add(r);
                 }
-                r.drawByStatus(this);
+                totalRecords++;
+            }
+        }
+
+        // handle it this way, because otherwise brushing no line would make all others disappear!
+        if (opaqueRecords.size() != totalRecords) {
+            for (Record r : opaqueRecords) {
+                r.setBrushingStatus(Status.OPAQUE);
+                r.updateStatus(this);
             }
         }
         redrawAllSeries();
@@ -971,7 +1042,7 @@ public class ParallelCoordinatesChart extends HighDimensionalChart {
         for (Series s : series) {
             for (Record r : s.getRecords()) {
                 r.setBrushingStatus(Status.NONE);
-                r.drawByStatus(this);
+                r.updateStatus(this);
 //    			if(r.isVisible()) {
 //    				r.getPolyline().setStroke(s.getColor());
 //    				r.getPolyline().setOpacity(s.getOpacity());
