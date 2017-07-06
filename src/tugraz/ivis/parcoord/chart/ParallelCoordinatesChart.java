@@ -27,8 +27,6 @@ import tugraz.ivis.parcoord.chart.Record.Status;
 
 import java.util.*;
 
-// TODO: implement basic graph here
-// TODO: this is basically only a bit of "playing around" for now
 public class ParallelCoordinatesChart extends HighDimensionalChart {
     private static final double BUTTON_MARGIN = 5.0;
     private static final double BUTTON_MIN_HEIGHT = 27;
@@ -314,6 +312,15 @@ public class ParallelCoordinatesChart extends HighDimensionalChart {
         return vSlider;
     }
 
+    /**
+     * Helper method for registering the drag and drop listeners of the chart (between and on axis)
+     *
+     * @param pcAxis              the axis on which the listener is registered on
+     * @param heightDragDropLabel
+     * @param buttonPane
+     * @param trueAxisSeparation
+     * @param yProperty
+     */
     private void registerDragAndDropListeners(ParallelCoordinatesAxis pcAxis, double heightDragDropLabel, Pane buttonPane, DoubleBinding trueAxisSeparation, DoubleProperty yProperty) {
         DragAndDropLabel labelDragAndDrop = new DragAndDropLabel(new Background(new BackgroundFill(Color.BLUE, CornerRadii.EMPTY, Insets.EMPTY)));
         DoubleBinding axisSeparation = getAxisSeparationBinding();
@@ -335,25 +342,22 @@ public class ParallelCoordinatesChart extends HighDimensionalChart {
     }
 
     /**
-     * Removes all javaFX components of all ParallelCoordinatesAxis objects from the graph:
-     * TODO moveAxes: in the future, this should be replaced by something better performing
-     * --> may not even be needed anymore
+     * Removes all javaFX components of all ParallelCoordinatesAxis objects from the graph
      */
     private void removeAxesFromChartChildren() {
         for (ParallelCoordinatesAxis pcAxes : axes.values()) {
             getChartChildren().remove(pcAxes.getAxis());
             getChartChildren().remove(pcAxes.getLabelBox());
-            //getChartChildren().remove(pcAxes.getBtnInvert());
-            // getChartChildren().remove(pcAxes.getBtnRight());
-            //getChartChildren().remove(pcAxes.getBtnLeft());
             getChartChildren().remove(pcAxes.getFilterSlider());
         }
     }
 
 
     /**
-     * Moves the given axes to the correct position and repositions the other ones
-     * TODO moveAxes: in the future, this should be replaced by something better performing (or be doing more)
+     * Moves the given axes to the correct position and repositions the other ones.
+     *
+     * @param oldIndex the old index and index of the axis to move
+     * @param newIndex the new index of the axis
      */
     public void moveAxis(int oldIndex, int newIndex) {
         int deltaPosition = newIndex - oldIndex;
@@ -396,7 +400,9 @@ public class ParallelCoordinatesChart extends HighDimensionalChart {
 
     /**
      * Swaps the position of the given axes given axes to the correct position and repositions the other ones
-     * TODO moveAxes: in the future, this should be replaced by something better performing (or be doing more)
+     *
+     * @param oldIndex the old index and index of the axis to move
+     * @param newIndex the new index of the axis
      */
     public void swapAxes(int oldIndex, int newIndex) {
         ParallelCoordinatesAxis currAxis = getAxisByIndex(oldIndex);
@@ -416,7 +422,6 @@ public class ParallelCoordinatesChart extends HighDimensionalChart {
      *
      * @param slider the slider to add listeners to
      */
-
     private void addFilterListeners(RangeSlider slider) {
         ChangeListener<Number> highListener = new ChangeListener<Number>() {
             @Override
@@ -652,8 +657,9 @@ public class ParallelCoordinatesChart extends HighDimensionalChart {
         return innerWidthProperty().divide(getAttributeCount() + 1);
     }
 
+
     /**
-     * TODO: is this the best way to get attribute/axis count
+     * @return the count of dimensions/attributes in the dataset
      */
     protected int getAttributeCount() {
         int valueCount = 0;
@@ -666,6 +672,14 @@ public class ParallelCoordinatesChart extends HighDimensionalChart {
         return valueCount;
     }
 
+    /**
+     * Overridden method from the chart superclass. Draws all the chart children.
+     *
+     * @param top    the top padding
+     * @param left   the padding on the left
+     * @param width  the width of the inner chart pane
+     * @param height the height of the inner chart pane
+     */
     @Override
     protected void layoutChartChildren(double top, double left, double width, double height) {
         if (this.height != (int) height || this.width != (int) width) {
@@ -679,6 +693,11 @@ public class ParallelCoordinatesChart extends HighDimensionalChart {
     }
 
 
+    /**
+     * returns the size of the button pane at the top of the chart as the offset
+     *
+     * @return the offset from the top of the chart to the beginning of the axis, which represent the size of the button pane
+     */
     private double getButtonPaneOffset() {
         return axes.get(0).getBtnInvert().getMinHeight() + BUTTON_MARGIN;
     }
@@ -1153,6 +1172,9 @@ public class ParallelCoordinatesChart extends HighDimensionalChart {
     }
 
 
+    /*
+     * Draws the legend below the graph.
+     */
     public void drawLegend() {
         if (legendVisible) {
 
@@ -1228,6 +1250,9 @@ public class ParallelCoordinatesChart extends HighDimensionalChart {
         }
     }
 
+    /**
+     * Displays the legend of the chart. Also redraws the whole chart.
+     */
     public void toggleShowLegend() {
         if (series == null)
             return;
@@ -1239,14 +1264,17 @@ public class ParallelCoordinatesChart extends HighDimensionalChart {
         redrawAllSeries();
     }
 
+    /**
+     * @return returns the relative height of the legend in the graph
+     */
     public double getLegendHeightRelative() {
         return legendVisible ? legendHeightRelative : 0;
     }
 
 
     /**
-     * helper class which defines the space between the axis which can be used to drag and drop them to the according
-     * position
+     * Helper class which defines the space between the axis which can be used to drag and drop them to the according
+     * position.
      */
     public class DragAndDropLabel extends Label {
         /**
@@ -1279,6 +1307,9 @@ public class ParallelCoordinatesChart extends HighDimensionalChart {
             setAlignment(Pos.CENTER);
         }
 
+        /**
+         * @return the right axis of the DragAndDropLabel
+         */
         public ParallelCoordinatesAxis getAxisRight() {
             return axisRight;
         }

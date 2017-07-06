@@ -14,8 +14,6 @@ import javafx.scene.layout.HBox;
 import javafx.scene.paint.Color;
 import org.controlsfx.control.RangeSlider;
 
-import java.util.Map;
-
 public class ParallelCoordinatesAxis {
     private int id;
     private int axisIndex;
@@ -33,22 +31,17 @@ public class ParallelCoordinatesAxis {
     /**
      * A basic constructor which allows for initial creation of the object
      *
-     * @param axisIndex
+     * @param axisIndex the initial index and id of the chart
      */
     public ParallelCoordinatesAxis(int axisIndex) {
         this.id = axisIndex;
         this.axisIndex = axisIndex;
     }
 
-    public ParallelCoordinatesAxis(int axisIndex, NumberAxis axis, String label, HBox labelBox, RangeSlider filterSlider, Button btnInvert, Button btnLeft, Button btnRight) {
-        this(axisIndex);
-        initialize(axis, label, labelBox, filterSlider, btnInvert, btnLeft, btnRight);
-    }
 
     /**
      * supports the basic constructor by setting the values AFTER already creating the axis
      * for now, this is the approach which is used when calling bindAxes in the chart
-     * TODO moveAxes: not sure if this is needed or can be replaced when refactoring for performance
      *
      * @param axis
      * @param label
@@ -76,6 +69,10 @@ public class ParallelCoordinatesAxis {
         setTickLabelFormatter();
     }
 
+    /**
+     * @param chart            the ParallelCoordinatesChart on which the drag and drop listener for this axis will be registered
+     * @param labelDragAndDrop the label between the axis which connects the DragAndDrop listeners
+     */
     public void registerDragAndDropListener(ParallelCoordinatesChart chart, ParallelCoordinatesChart.DragAndDropLabel labelDragAndDrop) {
         /* === set filter slider drag and drops === */
         EventHandler<MouseEvent> handlerDragDetected = event -> {
@@ -376,18 +373,6 @@ public class ParallelCoordinatesAxis {
 
     public void setBtnRight(Button btnRight) {
         this.btnRight = btnRight;
-    }
-
-    /**
-     * Moves this axes and ALL its components to a new position
-     * TODO moveAxes: in the future, this should be replaced by something better performing (or something doing more)
-     */
-    public void moveToPosition(int newPos, Map<Integer, ParallelCoordinatesAxis> axes/*DoubleBinding axisSeparation*/) {
-        // todo finish
-        // for now, only reset index!
-        // because afterwards, we attempt a full redraw anyway
-        // for the future, only reset btns and numberaxis X position here
-        setAxisIndex(newPos);
     }
 
     /**
