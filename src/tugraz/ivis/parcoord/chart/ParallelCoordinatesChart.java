@@ -110,13 +110,14 @@ public class ParallelCoordinatesChart extends HighDimensionalChart {
      * Reorders elements in the z dimensions to push certain elements to the front.
      */
     protected void reorder() {
-        // for (DragAndDropLabel label : pane) {
-        // paneControls.toFront();
-        // }
-
         for (ParallelCoordinatesAxis axis : axes.values()) {
             if (axis.getFilterSlider() != null)
                 axis.getFilterSlider().toFront();
+
+            axis.getBtnInvert().toFront();
+            axis.getBtnLeft().toFront();
+            axis.getBtnRight().toFront();
+            axis.getLabelBox().toFront();
         }
     }
 
@@ -239,7 +240,7 @@ public class ParallelCoordinatesChart extends HighDimensionalChart {
 
             btnInvert.setOnAction(event -> {
                 pcAxis.invert();
-                btnInvert.setGraphic(new ImageView(!pcAxis.isInverted() ? btnInvertDownImg : btnInvertUpImg));
+                btnInvert.setGraphic(new ImageView(!pcAxis.isInverted() ? btnInvertUpImg : btnInvertDownImg));
                 redrawAllSeries();
                 reorder();
             });
@@ -943,6 +944,7 @@ public class ParallelCoordinatesChart extends HighDimensionalChart {
 
         setOnMouseReleased((MouseEvent event) -> {
             gc.clearRect(0, 0, canvas.getWidth(), canvas.getHeight());
+            brushingRectangle.setVisible(false);
 
             //dismiss small rectangles
             if (brushingRectangle.getWidth() < 7.5 && brushingRectangle.getHeight() < 7.5)
@@ -960,7 +962,6 @@ public class ParallelCoordinatesChart extends HighDimensionalChart {
      * @param axisSeparation    the axis Separation used to draw the lines
      */
     private void handleCurrentBrushing(GraphicsContext gc, Rectangle brushingRectangle, DoubleBinding axisSeparation) {
-        brushingRectangle.setVisible(false);
         ArrayList<Record> brushedRecords = new ArrayList<>();
         for (Series s : series) {
             for (Record r : s.getRecords()) {
