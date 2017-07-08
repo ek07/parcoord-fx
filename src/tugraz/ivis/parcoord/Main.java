@@ -17,11 +17,8 @@ public class Main extends Application {
         primaryStage.setTitle("Parallel Coordinates Plot");
         Scene scene = new Scene(root);
         primaryStage.setScene(scene);
-        //scene.addEventFilter(MouseEvent.ANY, e -> System.out.println( e));
-
-
-        Controller controller = loader.getController();
-        controller.setStage(primaryStage);
+        ParcoordController parcoordController = loader.getController();
+        parcoordController.setStage(primaryStage);
         primaryStage.setMinHeight(600.0);
         primaryStage.setMinWidth(800.0);
         Rectangle2D primaryScreenBounds = Screen.getPrimary().getVisualBounds();
@@ -29,7 +26,6 @@ public class Main extends Application {
         primaryStage.setWidth(primaryScreenBounds.getWidth() - 200);
         primaryStage.centerOnScreen();
         primaryStage.show();
-        //controller.initTestGraphData();
     }
 
     public static void main(String[] args) {

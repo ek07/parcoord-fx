@@ -70,6 +70,8 @@ public class ParallelCoordinatesAxis {
     }
 
     /**
+     * Register
+     *
      * @param chart            the ParallelCoordinatesChart on which the drag and drop listener for this axis will be registered
      * @param labelDragAndDrop the label between the axis which connects the DragAndDrop listeners
      */

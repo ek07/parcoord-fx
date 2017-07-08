@@ -51,8 +51,8 @@ public class ParallelCoordinatesChart extends HighDimensionalChart {
 
     private long lastFilterHandle = 0;
     private final static long FILTER_FREQUENCY = 100; // handle filter changes every x milliseconds
-    public Pane paneControls;
-    public Canvas canvas;
+    private Pane paneControls;
+    private Canvas canvas;
     private int width;
     private int height;
 

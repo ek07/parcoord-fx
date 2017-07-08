@@ -5,7 +5,6 @@ import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
 import javafx.scene.control.Alert;
 import javafx.scene.control.RadioMenuItem;
-import javafx.scene.layout.AnchorPane;
 import javafx.scene.paint.Color;
 import javafx.stage.FileChooser;
 import javafx.stage.Stage;
@@ -20,10 +19,8 @@ import java.util.List;
 import java.util.ResourceBundle;
 
 // FXML interaction goes here
-public class Controller implements Initializable {
+public class ParcoordController {
     // === FXML params
-    @FXML
-    private AnchorPane anchorPane;
     @FXML
     private ParallelCoordinatesChart parcoordChart = null;
 
@@ -32,11 +29,7 @@ public class Controller implements Initializable {
 
     // === other helper params
     private Stage stage;
-
-    @Override
-    public void initialize(URL location, ResourceBundle resources) {
-
-    }
+    
 
     // this is called by Main
     public void setStage(Stage stage) {
@@ -120,14 +113,15 @@ public class Controller implements Initializable {
     }
 
     public void setDataModelToGraph(DataModel dm) {
+        // example data usage
         List<Record> series = dm.getItemsAsRecords();
         List<Record> series1 = series.subList(0, series.size() / 3);
         List<Record> series2 = series.subList(series.size() / 3 + 1, 2 * series.size() / 3);
         List<Record> series3 = series.subList(2 * series.size() / 3 + 1, series.size() - 1);
 
-        Series s1 = new Series("Year 70-74", series1, Color.RED, 0.2);
-        Series s2 = new Series("Year 74-77", series2, Color.BLUE, 0.2);
-        Series s3 = new Series("Year 77-82", series3, Color.GREEN, 0.2);
+        Series s1 = new Series("Series1", series1, Color.RED, 0.2);
+        Series s2 = new Series("Series2", series2, Color.BLUE, 0.2);
+        Series s3 = new Series("Series3", series3, Color.GREEN, 0.2);
 
         parcoordChart.clear();
         parcoordChart.setMinMaxValuesFromArray(dm.getMinMaxValues());
@@ -143,17 +137,6 @@ public class Controller implements Initializable {
         toggle_legend.setDisable(false);
 
         parcoordChart.drawLegend();
-    }
-
-    //TODO: this is just a "hack" for testing
-    public void initTestGraphData() {
-        // TODO: hardcoded path because its simply quicker for now
-        //DataModel dm = new DataModel("C:\\Users\\Helmut\\Documents\\GitHub\\parcoord-fx\\src\\data\\car.csv", ";", true);
-        DataModel dm = new DataModel("/home/thorsten/Uni/master/Sem3/InfoVis/Ass3/parcoord-fx/src/data/car.csv", ";", true);
-        //new DataModel("C:\\Users\\mchegini\\Documents\\NetBeansProjects\\PaCoPlot\\parcoord-fx\\src\\data\\car.csv", ";", true);
-        //DataModel dm = new DataModel("C:\\Users\\Thomas\\Documents\\Uni\\10. Semester\\ivis\\project\\parcoord-fx\\src\\data\\auto3.csv", ";", true);
-        setDataModelToGraph(dm);
-        parcoordChart.enableBrushing();
     }
 
     public void toggleLegend(ActionEvent actionEvent) {
