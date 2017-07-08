@@ -1263,6 +1263,7 @@ public class ParallelCoordinatesChart extends HighDimensionalChart {
         bindAxes();
         drawLegend();
         redrawAllSeries();
+        enableBrushing();
     }
 
     /**
