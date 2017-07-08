@@ -632,7 +632,7 @@ public class ParallelCoordinatesChart extends HighDimensionalChart {
      * Returns a property holding the height of the chartContent which is updated with each layoutChartChildren call.
      * Represents inner values (without padding, titleLabel, etc.)
      *
-     * @returns property representing the height of the chartContent
+     * @return property representing the height of the chartContent
      */
     public DoubleProperty innerHeightProperty() {
         return innerHeightProperty;
@@ -642,7 +642,7 @@ public class ParallelCoordinatesChart extends HighDimensionalChart {
      * Returns a property holding the width of the chartContent which is updated with each layoutChartChildren call.
      * Represents inner values (without padding, titleLabel, etc.)
      *
-     * @returns property representing the width of the chartContent
+     * @return property representing the width of the chartContent
      */
     public DoubleProperty innerWidthProperty() {
         return innerWidthProperty;
@@ -652,7 +652,7 @@ public class ParallelCoordinatesChart extends HighDimensionalChart {
      * Returns a DoubleBinding representing the horizontal space between the axes
      * Uses a binding on innerWidthProperty and the data length
      *
-     * @returns DoubleBinding which equals the horizontal space between axes
+     * @return DoubleBinding which equals the horizontal space between axes
      */
     private DoubleBinding getAxisSeparationBinding() {
         return innerWidthProperty().divide(getAttributeCount() + 1);
@@ -823,6 +823,8 @@ public class ParallelCoordinatesChart extends HighDimensionalChart {
 
     /**
      * Helper method for sorting axes in correct display order
+     *
+     * @return list of ordered axes (by index)
      */
     private List<ParallelCoordinatesAxis> getAxesInOrder() {
         List<ParallelCoordinatesAxis> sortedAxes = new ArrayList<>(axes.values());
@@ -838,6 +840,8 @@ public class ParallelCoordinatesChart extends HighDimensionalChart {
      * @param heightAxis the available space for the given axis
      * @param value      the value of the data to be displayed
      * @param axis       the axis to look at
+     *
+     * @return DoubleBinding which represents the concrete value of the axes
      */
     private DoubleBinding getValueOnAxis(double yStartAxes, DoubleBinding heightAxis, double value, ParallelCoordinatesAxis axis) {
         DoubleBinding binding;
