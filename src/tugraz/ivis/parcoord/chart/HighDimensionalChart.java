@@ -20,7 +20,7 @@ import java.util.List;
 /**
  * @author mchegini
  */
-public abstract class HighDimensionalChart extends Chart implements Brushable {
+public abstract class HighDimensionalChart extends Chart {
     protected ObservableList<Series> series = FXCollections.observableArrayList();
     protected double top;
     protected double left;
@@ -87,26 +87,6 @@ public abstract class HighDimensionalChart extends Chart implements Brushable {
     public void clear() {
         getChartChildren().clear();
         series.clear();
-    }
-
-    @Override
-    public void redrawSelected() {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
-    }
-
-    @Override
-    public void drawAllBackground() {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
-    }
-
-    @Override
-    public void removeSelectItems(ObservableList<Record> records) {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
-    }
-
-    @Override
-    public void addSelectItems(ObservableList<Record> records) {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
     }
 
     /**
